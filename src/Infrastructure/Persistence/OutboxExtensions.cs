@@ -43,6 +43,7 @@ internal static class OutboxExtensions
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
         Converters =
         {
+            new JsonStringEnumConverter(),
             new HouseholdIdConverter(),
             new MembershipIdConverter(),
             new ChoreIdConverter(),

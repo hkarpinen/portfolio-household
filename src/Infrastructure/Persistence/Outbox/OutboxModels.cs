@@ -40,4 +40,6 @@ public sealed class UserProjection
     public string? AvatarUrl { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
+    public bool IsDemo { get; set; }
+    public DateTime? DemoSeedCompletedAt { get; set; }
 }

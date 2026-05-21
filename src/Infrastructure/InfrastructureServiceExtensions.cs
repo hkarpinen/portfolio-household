@@ -31,6 +31,8 @@ public static class InfrastructureServiceExtensions
 
             x.AddConsumer<UserRegisteredConsumer>();
             x.AddConsumer<UserProfileUpdatedConsumer>();
+            x.AddConsumer<DemoUserCreatedConsumer>();
+            x.AddConsumer<DemoUserExpiredConsumer>();
 
             x.UsingRabbitMq((context, cfg) =>
             {
@@ -54,6 +56,7 @@ public static class InfrastructureServiceExtensions
         services.AddScoped<IHouseholdQuery, HouseholdQuery>();
         services.AddScoped<IChoreQuery, ChoreQuery>();
         services.AddScoped<ICalendarEventQuery, CalendarEventQuery>();
+        services.AddScoped<IDemoQuery, DemoQuery>();
 
         services.AddHostedService<OutboxPublisher>();
 

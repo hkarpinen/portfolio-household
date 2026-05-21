@@ -12,4 +12,5 @@ public interface IHouseholdMembershipRepository
     Task<IReadOnlyList<HouseholdMembership>> ListByUserAsync(UserId userId, CancellationToken ct = default);
     Task AddAsync(HouseholdMembership membership, CancellationToken ct = default);
     Task SaveChangesAsync(CancellationToken ct = default);
+    Task DeleteByUserAsync(UserId userId, CancellationToken ct = default);
 }

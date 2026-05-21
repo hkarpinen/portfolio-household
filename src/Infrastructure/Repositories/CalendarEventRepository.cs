@@ -15,4 +15,10 @@ internal sealed class CalendarEventRepository(HouseholdDbContext db) : ICalendar
         await db.CalendarEvents.AddAsync(calendarEvent, ct);
 
     public Task SaveChangesAsync(CancellationToken ct) => db.SaveChangesAsync(ct);
+
+    public Task DeleteByHouseholdIdsAsync(IEnumerable<HouseholdId> householdIds, CancellationToken ct)
+    {
+        var ids = householdIds.Select(h => h.Value).ToList();
+        return db.CalendarEvents.Where(c => ids.Contains(c.HouseholdId.Value)).ExecuteDeleteAsync(ct);
+    }
 }

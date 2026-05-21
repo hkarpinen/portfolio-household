@@ -26,6 +26,7 @@ internal sealed class OutboxPublisher : BackgroundService
         [nameof(HouseholdMemberRemoved)]            = typeof(HouseholdMemberRemovedEvent),
         [nameof(HouseholdMemberRoleChanged)]        = typeof(HouseholdMemberRoleChangedEvent),
         [nameof(HouseholdMemberInvited)]            = typeof(HouseholdMemberInvitedEvent),
+        [nameof(DemoHouseholdSeededEvent)]          = typeof(DemoHouseholdSeededEvent),
     };
 
     private static readonly JsonSerializerOptions JsonOptions = new()

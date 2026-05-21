@@ -29,4 +29,7 @@ internal sealed class HouseholdMembershipRepository(HouseholdDbContext db) : IHo
     }
 
     public Task SaveChangesAsync(CancellationToken ct) => db.SaveChangesAsync(ct);
+
+    public Task DeleteByUserAsync(UserId userId, CancellationToken ct) =>
+        db.Memberships.Where(m => m.UserId == userId).ExecuteDeleteAsync(ct);
 }

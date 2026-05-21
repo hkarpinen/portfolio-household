@@ -31,5 +31,7 @@ internal sealed class UserProjectionConfiguration : IEntityTypeConfiguration<Use
         builder.Property(u => u.Username).HasMaxLength(50).IsRequired();
         builder.Property(u => u.DisplayName).HasMaxLength(100);
         builder.Property(u => u.AvatarUrl).HasMaxLength(500);
+        builder.Property(u => u.IsDemo).IsRequired().HasDefaultValue(false);
+        builder.Property(u => u.DemoSeedCompletedAt);
     }
 }

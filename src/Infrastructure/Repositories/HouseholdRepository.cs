@@ -18,4 +18,10 @@ internal sealed class HouseholdRepository(HouseholdDbContext db) : IHouseholdRep
     }
 
     public Task SaveChangesAsync(CancellationToken ct) => db.SaveChangesAsync(ct);
+
+    public async Task<IReadOnlyList<HouseholdAggregate>> ListByOwnerAsync(UserId ownerId, CancellationToken ct) =>
+        await db.Households.Where(h => h.OwnerId == ownerId && h.IsActive).ToListAsync(ct);
+
+    public Task DeleteByOwnerAsync(UserId ownerId, CancellationToken ct) =>
+        db.Households.Where(h => h.OwnerId == ownerId).ExecuteDeleteAsync(ct);
 }

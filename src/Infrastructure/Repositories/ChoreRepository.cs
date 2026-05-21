@@ -15,4 +15,10 @@ internal sealed class ChoreRepository(HouseholdDbContext db) : IChoreRepository
         await db.Chores.AddAsync(chore, ct);
 
     public Task SaveChangesAsync(CancellationToken ct) => db.SaveChangesAsync(ct);
+
+    public Task DeleteByHouseholdIdsAsync(IEnumerable<HouseholdId> householdIds, CancellationToken ct)
+    {
+        var ids = householdIds.Select(h => h.Value).ToList();
+        return db.Chores.Where(c => ids.Contains(c.HouseholdId.Value)).ExecuteDeleteAsync(ct);
+    }
 }
