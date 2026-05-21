@@ -67,10 +67,7 @@ try
 
     builder.Services.AddCors(options =>
     {
-        var corsOriginsEnv = Environment.GetEnvironmentVariable("CORS_ORIGINS");
-        var allowedOrigins = corsOriginsEnv is not null
-            ? corsOriginsEnv.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            : builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
+        var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
         options.AddDefaultPolicy(policy =>
             policy.WithOrigins(allowedOrigins)
                 .WithHeaders("Content-Type", "Authorization")
