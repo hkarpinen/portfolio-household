@@ -70,8 +70,8 @@ try
         var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
         options.AddDefaultPolicy(policy =>
             policy.WithOrigins(allowedOrigins)
-                .AllowAnyHeader()
-                .AllowAnyMethod()
+                .WithHeaders("Content-Type", "Authorization")
+                .WithMethods("GET", "POST", "PUT", "PATCH", "DELETE")
                 .AllowCredentials());
     });
 
@@ -110,8 +110,12 @@ try
     app.UseAuthentication();
     app.UseAuthorization();
 
-    app.UseSwagger();
-    app.MapScalarApiReference();
+    if (app.Environment.IsDevelopment())
+    {
+        app.UseSwagger();
+        app.MapScalarApiReference();
+    }
+
     app.MapControllers();
     app.MapHealthChecks("/healthz").AllowAnonymous();
 
