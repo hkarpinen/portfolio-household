@@ -38,7 +38,10 @@ public sealed class MembershipManager(
         var householdId = HouseholdId.Create(cmd.HouseholdId);
         await EnsureMemberAsync(householdId, cmd.RequestingUserId, ct);
 
-        var membership = HouseholdMembership.CreateWithInvitation(householdId, UserId.Create(cmd.RequestingUserId));
+        var household = await householdRepo.GetByIdAsync(householdId, ct)
+            ?? throw new KeyNotFoundException("Household not found.");
+
+        var membership = HouseholdMembership.CreateWithInvitation(householdId, household.Name, UserId.Create(cmd.RequestingUserId), cmd.RecipientEmail);
         await membershipRepo.AddAsync(membership, ct);
         await membershipRepo.SaveChangesAsync(ct);
         return membership.InvitationCode!;

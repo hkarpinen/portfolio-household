@@ -17,16 +17,23 @@ internal sealed class OutboxPublisher : BackgroundService
 
     private static readonly Dictionary<string, Type> EventTypeMap = new()
     {
-        [nameof(HouseholdCreated)]                  = typeof(HouseholdCreatedEvent),
-        [nameof(HouseholdUpdated)]                  = typeof(HouseholdUpdatedEvent),
-        [nameof(HouseholdDeleted)]                  = typeof(HouseholdDeletedEvent),
-        [nameof(HouseholdOwnershipTransferred)]     = typeof(HouseholdOwnershipTransferredEvent),
-        [nameof(HouseholdMemberJoined)]             = typeof(HouseholdMemberJoinedEvent),
-        [nameof(HouseholdMemberLeft)]               = typeof(HouseholdMemberLeftEvent),
-        [nameof(HouseholdMemberRemoved)]            = typeof(HouseholdMemberRemovedEvent),
-        [nameof(HouseholdMemberRoleChanged)]        = typeof(HouseholdMemberRoleChangedEvent),
-        [nameof(HouseholdMemberInvited)]            = typeof(HouseholdMemberInvitedEvent),
-        [nameof(DemoHouseholdSeededEvent)]          = typeof(DemoHouseholdSeededEvent),
+        [nameof(HouseholdCreated)]              = typeof(HouseholdCreated),
+        [nameof(HouseholdUpdated)]              = typeof(HouseholdUpdated),
+        [nameof(HouseholdDeleted)]              = typeof(HouseholdDeleted),
+        [nameof(HouseholdOwnershipTransferred)] = typeof(HouseholdOwnershipTransferred),
+        [nameof(HouseholdMemberJoined)]         = typeof(HouseholdMemberJoined),
+        [nameof(HouseholdMemberLeft)]           = typeof(HouseholdMemberLeft),
+        [nameof(HouseholdMemberRemoved)]        = typeof(HouseholdMemberRemoved),
+        [nameof(HouseholdMemberRoleChanged)]    = typeof(HouseholdMemberRoleChanged),
+        [nameof(HouseholdMemberInvited)]        = typeof(HouseholdMemberInvited),
+        [nameof(ChoreCreated)]                  = typeof(ChoreCreated),
+        [nameof(ChoreAssigned)]                 = typeof(ChoreAssigned),
+        [nameof(ChoreCompleted)]                = typeof(ChoreCompleted),
+        [nameof(ChoreDeleted)]                  = typeof(ChoreDeleted),
+        [nameof(CalendarEventCreated)]          = typeof(CalendarEventCreated),
+        [nameof(CalendarEventUpdated)]          = typeof(CalendarEventUpdated),
+        [nameof(CalendarEventDeleted)]          = typeof(CalendarEventDeleted),
+        [nameof(DemoHouseholdSeededEvent)]      = typeof(DemoHouseholdSeededEvent),
     };
 
     private static readonly JsonSerializerOptions JsonOptions = new()

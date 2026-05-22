@@ -83,9 +83,9 @@ public sealed class HouseholdsController(
 
     // POST /api/households/{id}/invite
     [HttpPost("{id:guid}/invite")]
-    public async Task<IActionResult> Invite(Guid id, CancellationToken ct)
+    public async Task<IActionResult> Invite(Guid id, [FromBody] InviteRequest? request, CancellationToken ct)
     {
-        var code = await membershipManager.InviteAsync(new InviteMemberCommand(id, CurrentUserId), ct);
+        var code = await membershipManager.InviteAsync(new InviteMemberCommand(id, CurrentUserId, request?.RecipientEmail), ct);
         return Ok(new { invitationCode = code });
     }
 
@@ -124,6 +124,7 @@ public sealed class HouseholdsController(
 
 // Request models
 public sealed record CreateHouseholdRequest(string Name, string? Description, string CurrencyCode);
+public sealed record InviteRequest(string? RecipientEmail);
 public sealed record UpdateHouseholdRequest(string Name, string? Description, string CurrencyCode);
 public sealed record TransferOwnershipRequest(Guid NewOwnerId);
 public sealed record AcceptInvitationRequest(string InvitationCode);

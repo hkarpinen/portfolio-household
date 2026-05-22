@@ -1,30 +1,28 @@
-using Household.Domain.ValueObjects;
-
 namespace Household.Domain.Events;
 
 public sealed record ChoreCreated(
-    ChoreId ChoreId,
-    HouseholdId HouseholdId,
-    UserId CreatedByUserId,
+    Guid ChoreId,
+    Guid HouseholdId,
+    Guid CreatedByUserId,
     string Title,
     string? Description,
     DateTime? DueDate,
-    RecurrenceFrequency? RecurrenceFrequency,
+    string? RecurrenceFrequency,
     DateTime CreatedAt) : DomainEvent;
 
 public sealed record ChoreAssigned(
-    ChoreId ChoreId,
-    HouseholdId HouseholdId,
-    UserId AssignedToUserId,
+    Guid ChoreId,
+    Guid HouseholdId,
+    Guid AssignedToUserId,
     DateTime AssignedAt) : DomainEvent;
 
 public sealed record ChoreCompleted(
-    ChoreId ChoreId,
-    HouseholdId HouseholdId,
-    UserId CompletedByUserId,
+    Guid ChoreId,
+    Guid HouseholdId,
+    Guid CompletedByUserId,
     DateTime CompletedAt) : DomainEvent;
 
 public sealed record ChoreDeleted(
-    ChoreId ChoreId,
-    HouseholdId HouseholdId,
+    Guid ChoreId,
+    Guid HouseholdId,
     DateTime DeletedAt) : DomainEvent;

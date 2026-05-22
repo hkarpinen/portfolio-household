@@ -1,4 +1,4 @@
-using Infrastructure.Messaging.Events;
+using Domain.Events;
 using Infrastructure.Persistence;
 using Infrastructure.Persistence.Outbox;
 using MassTransit;
@@ -7,9 +7,9 @@ using Npgsql;
 
 namespace Infrastructure.Messaging.Consumers;
 
-internal sealed class UserRegisteredConsumer(HouseholdDbContext db) : IConsumer<UserRegisteredEvent>
+internal sealed class UserRegisteredConsumer(HouseholdDbContext db) : IConsumer<UserRegistered>
 {
-    public async Task Consume(ConsumeContext<UserRegisteredEvent> context)
+    public async Task Consume(ConsumeContext<UserRegistered> context)
     {
         var message = context.Message;
         if (await db.ProcessedEvents.AnyAsync(e => e.EventId == message.Id, context.CancellationToken))
@@ -34,7 +34,7 @@ internal sealed class UserRegisteredConsumer(HouseholdDbContext db) : IConsumer<
             existing.UpdatedAt = message.OccurredAt;
         }
 
-        db.ProcessedEvents.Add(new ProcessedEvent(message.Id, nameof(UserRegisteredEvent), DateTime.UtcNow));
+        db.ProcessedEvents.Add(new ProcessedEvent(message.Id, nameof(UserRegistered), DateTime.UtcNow));
         try
         {
             await db.SaveChangesAsync(context.CancellationToken);
@@ -55,9 +55,9 @@ internal sealed class UserRegisteredConsumer(HouseholdDbContext db) : IConsumer<
     }
 }
 
-internal sealed class UserProfileUpdatedConsumer(HouseholdDbContext db) : IConsumer<UserProfileUpdatedEvent>
+internal sealed class UserProfileUpdatedConsumer(HouseholdDbContext db) : IConsumer<UserProfileUpdated>
 {
-    public async Task Consume(ConsumeContext<UserProfileUpdatedEvent> context)
+    public async Task Consume(ConsumeContext<UserProfileUpdated> context)
     {
         var message = context.Message;
         if (await db.ProcessedEvents.AnyAsync(e => e.EventId == message.Id, context.CancellationToken))
@@ -71,7 +71,7 @@ internal sealed class UserProfileUpdatedConsumer(HouseholdDbContext db) : IConsu
             existing.UpdatedAt = message.OccurredAt;
         }
 
-        db.ProcessedEvents.Add(new ProcessedEvent(message.Id, nameof(UserProfileUpdatedEvent), DateTime.UtcNow));
+        db.ProcessedEvents.Add(new ProcessedEvent(message.Id, nameof(UserProfileUpdated), DateTime.UtcNow));
         try
         {
             await db.SaveChangesAsync(context.CancellationToken);

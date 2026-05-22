@@ -1,63 +1,63 @@
-using Household.Domain.ValueObjects;
-
 namespace Household.Domain.Events;
 
 public sealed record HouseholdCreated(
-    HouseholdId HouseholdId,
-    UserId OwnerId,
+    Guid HouseholdId,
+    Guid OwnerId,
     string Name,
     string? Description,
     string CurrencyCode,
     DateTime CreatedAt) : DomainEvent;
 
 public sealed record HouseholdUpdated(
-    HouseholdId HouseholdId,
+    Guid HouseholdId,
     string Name,
     string? Description,
     string CurrencyCode,
     DateTime UpdatedAt) : DomainEvent;
 
 public sealed record HouseholdOwnershipTransferred(
-    HouseholdId HouseholdId,
-    UserId PreviousOwnerId,
-    UserId NewOwnerId,
+    Guid HouseholdId,
+    Guid PreviousOwnerId,
+    Guid NewOwnerId,
     DateTime TransferredAt) : DomainEvent;
 
 public sealed record HouseholdDeleted(
-    HouseholdId HouseholdId,
+    Guid HouseholdId,
     DateTime DeletedAt) : DomainEvent;
 
 public sealed record HouseholdMemberInvited(
-    MembershipId MembershipId,
-    HouseholdId HouseholdId,
-    UserId InvitedByUserId,
+    Guid MembershipId,
+    Guid HouseholdId,
+    string HouseholdName,
+    Guid InvitedByUserId,
     string InvitationCode,
+    string? RecipientEmail,
     DateTime InvitedAt) : DomainEvent;
 
 public sealed record HouseholdMemberJoined(
-    MembershipId MembershipId,
-    HouseholdId HouseholdId,
-    UserId UserId,
-    HouseholdRole Role,
+    Guid MembershipId,
+    Guid HouseholdId,
+    Guid UserId,
+    string Role,
     DateTime JoinedAt) : DomainEvent;
 
 public sealed record HouseholdMemberLeft(
-    MembershipId MembershipId,
-    HouseholdId HouseholdId,
-    UserId UserId,
+    Guid MembershipId,
+    Guid HouseholdId,
+    Guid UserId,
     DateTime LeftAt) : DomainEvent;
 
 public sealed record HouseholdMemberRemoved(
-    MembershipId MembershipId,
-    HouseholdId HouseholdId,
-    UserId RemovedByUserId,
-    UserId RemovedUserId,
+    Guid MembershipId,
+    Guid HouseholdId,
+    Guid RemovedByUserId,
+    Guid RemovedUserId,
     DateTime RemovedAt) : DomainEvent;
 
 public sealed record HouseholdMemberRoleChanged(
-    MembershipId MembershipId,
-    HouseholdId HouseholdId,
-    UserId UserId,
-    HouseholdRole OldRole,
-    HouseholdRole NewRole,
+    Guid MembershipId,
+    Guid HouseholdId,
+    Guid UserId,
+    string OldRole,
+    string NewRole,
     DateTime ChangedAt) : DomainEvent;

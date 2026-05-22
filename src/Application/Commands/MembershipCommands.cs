@@ -8,7 +8,8 @@ public sealed record JoinHouseholdCommand(
 
 public sealed record InviteMemberCommand(
     Guid HouseholdId,
-    Guid RequestingUserId);
+    Guid RequestingUserId,
+    string? RecipientEmail = null);
 
 public sealed record AcceptInvitationCommand(
     string InvitationCode,

@@ -1,5 +1,5 @@
+using Domain.Events;
 using Household.Application.Managers.Demo;
-using Household.Domain.ValueObjects;
 using Infrastructure.Messaging.Events;
 using Infrastructure.Persistence;
 using Infrastructure.Persistence.Outbox;
@@ -11,15 +11,14 @@ namespace Infrastructure.Messaging.Consumers;
 
 internal sealed class DemoUserCreatedConsumer(
     HouseholdDbContext db,
-    IDemoSeedManager demoSeedManager) : IConsumer<DemoUserCreatedEvent>
+    IDemoSeedManager demoSeedManager) : IConsumer<DemoUserCreated>
 {
-    public async Task Consume(ConsumeContext<DemoUserCreatedEvent> context)
+    public async Task Consume(ConsumeContext<DemoUserCreated> context)
     {
         var message = context.Message;
         if (await db.ProcessedEvents.AnyAsync(e => e.EventId == message.Id, context.CancellationToken))
             return;
 
-        // Infrastructure concern: create or update the user projection
         var projection = await db.UserProjections
             .FirstOrDefaultAsync(u => u.Id == message.UserId, context.CancellationToken);
 
@@ -42,11 +41,8 @@ internal sealed class DemoUserCreatedConsumer(
             projection.UpdatedAt = message.OccurredAt;
         }
 
-        // Application concern: seed domain aggregates via manager
-        // SeedAsync is idempotent and commits via the shared DbContext (which also persists the projection above)
         var householdId = await demoSeedManager.SeedAsync(message.UserId, message.DisplayName, context.CancellationToken);
 
-        // Notify the finance service so it can seed shared household bills.
         if (householdId.HasValue)
         {
             db.AddToOutbox(new DemoHouseholdSeededEvent(
@@ -56,9 +52,8 @@ internal sealed class DemoUserCreatedConsumer(
                 householdId.Value));
         }
 
-        // Mark readiness and record idempotency key
         projection.DemoSeedCompletedAt = DateTime.UtcNow;
-        db.ProcessedEvents.Add(new ProcessedEvent(message.Id, nameof(DemoUserCreatedEvent), DateTime.UtcNow));
+        db.ProcessedEvents.Add(new ProcessedEvent(message.Id, nameof(DemoUserCreated), DateTime.UtcNow));
 
         try
         {
@@ -80,24 +75,22 @@ internal sealed class DemoUserCreatedConsumer(
 
 internal sealed class DemoUserExpiredConsumer(
     HouseholdDbContext db,
-    IDemoSeedManager demoSeedManager) : IConsumer<DemoUserExpiredEvent>
+    IDemoSeedManager demoSeedManager) : IConsumer<DemoUserExpired>
 {
-    public async Task Consume(ConsumeContext<DemoUserExpiredEvent> context)
+    public async Task Consume(ConsumeContext<DemoUserExpired> context)
     {
         var message = context.Message;
         if (await db.ProcessedEvents.AnyAsync(e => e.EventId == message.Id, context.CancellationToken))
             return;
 
-        // Application concern: delete domain aggregates via manager
         await demoSeedManager.CleanupAsync(message.UserId, context.CancellationToken);
 
-        // Infrastructure concern: remove user projection
         var projection = await db.UserProjections
             .FirstOrDefaultAsync(u => u.Id == message.UserId, context.CancellationToken);
         if (projection is not null)
             db.UserProjections.Remove(projection);
 
-        db.ProcessedEvents.Add(new ProcessedEvent(message.Id, nameof(DemoUserExpiredEvent), DateTime.UtcNow));
+        db.ProcessedEvents.Add(new ProcessedEvent(message.Id, nameof(DemoUserExpired), DateTime.UtcNow));
 
         try
         {

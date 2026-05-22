@@ -44,7 +44,7 @@ public sealed class HouseholdCalendarEvent : IAggregateRoot
             CreatedAt = now
         };
         ev._domainEvents.Add(new CalendarEventCreated(
-            ev.Id, householdId, createdByUserId, title, description, startsAt, endsAt, allDay, now));
+            ev.Id.Value, householdId.Value, createdByUserId.Value, title, description, startsAt, endsAt, allDay, now));
         return ev;
     }
 
@@ -56,13 +56,13 @@ public sealed class HouseholdCalendarEvent : IAggregateRoot
         EndsAt = endsAt;
         AllDay = allDay;
         UpdatedAt = DateTime.UtcNow;
-        _domainEvents.Add(new CalendarEventUpdated(Id, HouseholdId, title, description, startsAt, endsAt, allDay, UpdatedAt.Value));
+        _domainEvents.Add(new CalendarEventUpdated(Id.Value, HouseholdId.Value, title, description, startsAt, endsAt, allDay, UpdatedAt.Value));
     }
 
     public void Delete()
     {
         DeletedAt = DateTime.UtcNow;
-        _domainEvents.Add(new CalendarEventDeleted(Id, HouseholdId, DeletedAt.Value));
+        _domainEvents.Add(new CalendarEventDeleted(Id.Value, HouseholdId.Value, DeletedAt.Value));
     }
 
     public IReadOnlyCollection<DomainEvent> DomainEvents => _domainEvents.AsReadOnly();

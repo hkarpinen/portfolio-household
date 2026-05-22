@@ -1,6 +1,8 @@
-namespace Infrastructure.Messaging.Events;
+// Wire contract for identity demo events consumed from RabbitMQ.
+// Namespace and type names must match the domain events published by the identity service.
+namespace Domain.Events;
 
-public sealed record DemoUserCreatedEvent(
+public sealed record DemoUserCreated(
     Guid Id,
     DateTime OccurredAt,
     Guid UserId,
@@ -8,15 +10,7 @@ public sealed record DemoUserCreatedEvent(
     string DisplayName,
     DateTime DemoExpiresAt);
 
-public sealed record DemoUserExpiredEvent(
+public sealed record DemoUserExpired(
     Guid Id,
     DateTime OccurredAt,
     Guid UserId);
-
-/// <summary>Published by the household service after the demo household is fully seeded.
-/// Finance service consumes this to seed shared household bills.</summary>
-public sealed record DemoHouseholdSeededEvent(
-    Guid Id,
-    DateTime OccurredAt,
-    Guid UserId,
-    Guid HouseholdId);

@@ -1,18 +1,17 @@
-namespace Infrastructure.Messaging.Events;
+// Wire contract for identity events consumed from RabbitMQ.
+// Namespace and type names must match the domain events published by the identity service.
+namespace Domain.Events;
 
-/// <summary>Wire shapes for identity events consumed from RabbitMQ.
-/// Must match the wire shape published by the Identity service outbox.</summary>
-/// 
-public sealed record UserRegisteredEvent(
+public sealed record UserRegistered(
     Guid Id,
     DateTime OccurredAt,
     Guid UserId,
     string Email,
     string DisplayName);
 
-public sealed record UserProfileUpdatedEvent(
+public sealed record UserProfileUpdated(
     Guid Id,
     DateTime OccurredAt,
     Guid UserId,
-    string? DisplayName,
+    string DisplayName,
     string? AvatarUrl);

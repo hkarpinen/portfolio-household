@@ -43,27 +43,28 @@ public sealed class Chore : IAggregateRoot
             IsActive = true
         };
         chore._domainEvents.Add(new ChoreCreated(
-            chore.Id, householdId, createdByUserId, title, description, dueDate, recurrenceFrequency, now));
+            chore.Id.Value, householdId.Value, createdByUserId.Value, title, description, dueDate,
+            recurrenceFrequency?.ToString(), now));
         return chore;
     }
 
     public void Assign(UserId assignedToUserId)
     {
         AssignedToUserId = assignedToUserId;
-        _domainEvents.Add(new ChoreAssigned(Id, HouseholdId, assignedToUserId, DateTime.UtcNow));
+        _domainEvents.Add(new ChoreAssigned(Id.Value, HouseholdId.Value, assignedToUserId.Value, DateTime.UtcNow));
     }
 
     public void Complete(UserId completedByUserId)
     {
         CompletedAt = DateTime.UtcNow;
         IsActive = false;
-        _domainEvents.Add(new ChoreCompleted(Id, HouseholdId, completedByUserId, CompletedAt.Value));
+        _domainEvents.Add(new ChoreCompleted(Id.Value, HouseholdId.Value, completedByUserId.Value, CompletedAt.Value));
     }
 
     public void Delete()
     {
         IsActive = false;
-        _domainEvents.Add(new ChoreDeleted(Id, HouseholdId, DateTime.UtcNow));
+        _domainEvents.Add(new ChoreDeleted(Id.Value, HouseholdId.Value, DateTime.UtcNow));
     }
 
     public IReadOnlyCollection<DomainEvent> DomainEvents => _domainEvents.AsReadOnly();

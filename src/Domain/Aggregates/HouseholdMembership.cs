@@ -32,11 +32,11 @@ public sealed class HouseholdMembership : IAggregateRoot
             IsActive = true
         };
         membership._domainEvents.Add(new HouseholdMemberJoined(
-            membership.Id, householdId, userId, role, now));
+            membership.Id.Value, householdId.Value, userId.Value, role.ToString(), now));
         return membership;
     }
 
-    public static HouseholdMembership CreateWithInvitation(HouseholdId householdId, UserId invitedByUserId)
+    public static HouseholdMembership CreateWithInvitation(HouseholdId householdId, string householdName, UserId invitedByUserId, string? recipientEmail = null)
     {
         var now = DateTime.UtcNow;
         var code = Guid.NewGuid().ToString("N")[..8].ToUpperInvariant();
@@ -52,7 +52,7 @@ public sealed class HouseholdMembership : IAggregateRoot
             InvitationCode = code
         };
         membership._domainEvents.Add(new HouseholdMemberInvited(
-            membership.Id, householdId, invitedByUserId, code, now));
+            membership.Id.Value, householdId.Value, householdName, invitedByUserId.Value, code, recipientEmail, now));
         return membership;
     }
 
@@ -61,7 +61,7 @@ public sealed class HouseholdMembership : IAggregateRoot
         UserId = userId;
         IsActive = true;
         UpdatedAt = DateTime.UtcNow;
-        _domainEvents.Add(new HouseholdMemberJoined(Id, HouseholdId, userId, Role, UpdatedAt));
+        _domainEvents.Add(new HouseholdMemberJoined(Id.Value, HouseholdId.Value, userId.Value, Role.ToString(), UpdatedAt));
     }
 
     public void ChangeRole(HouseholdRole newRole)
@@ -69,21 +69,21 @@ public sealed class HouseholdMembership : IAggregateRoot
         var old = Role;
         Role = newRole;
         UpdatedAt = DateTime.UtcNow;
-        _domainEvents.Add(new HouseholdMemberRoleChanged(Id, HouseholdId, UserId, old, newRole, UpdatedAt));
+        _domainEvents.Add(new HouseholdMemberRoleChanged(Id.Value, HouseholdId.Value, UserId.Value, old.ToString(), newRole.ToString(), UpdatedAt));
     }
 
     public void Leave()
     {
         IsActive = false;
         UpdatedAt = DateTime.UtcNow;
-        _domainEvents.Add(new HouseholdMemberLeft(Id, HouseholdId, UserId, UpdatedAt));
+        _domainEvents.Add(new HouseholdMemberLeft(Id.Value, HouseholdId.Value, UserId.Value, UpdatedAt));
     }
 
     public void Remove(UserId removedByUserId)
     {
         IsActive = false;
         UpdatedAt = DateTime.UtcNow;
-        _domainEvents.Add(new HouseholdMemberRemoved(Id, HouseholdId, removedByUserId, UserId, UpdatedAt));
+        _domainEvents.Add(new HouseholdMemberRemoved(Id.Value, HouseholdId.Value, removedByUserId.Value, UserId.Value, UpdatedAt));
     }
 
     public IReadOnlyCollection<DomainEvent> DomainEvents => _domainEvents.AsReadOnly();

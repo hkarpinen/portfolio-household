@@ -1,11 +1,9 @@
-using Household.Domain.ValueObjects;
-
 namespace Household.Domain.Events;
 
 public sealed record CalendarEventCreated(
-    CalendarEventId CalendarEventId,
-    HouseholdId HouseholdId,
-    UserId CreatedByUserId,
+    Guid CalendarEventId,
+    Guid HouseholdId,
+    Guid CreatedByUserId,
     string Title,
     string? Description,
     DateTime StartsAt,
@@ -14,8 +12,8 @@ public sealed record CalendarEventCreated(
     DateTime CreatedAt) : DomainEvent;
 
 public sealed record CalendarEventUpdated(
-    CalendarEventId CalendarEventId,
-    HouseholdId HouseholdId,
+    Guid CalendarEventId,
+    Guid HouseholdId,
     string Title,
     string? Description,
     DateTime StartsAt,
@@ -24,6 +22,6 @@ public sealed record CalendarEventUpdated(
     DateTime UpdatedAt) : DomainEvent;
 
 public sealed record CalendarEventDeleted(
-    CalendarEventId CalendarEventId,
-    HouseholdId HouseholdId,
+    Guid CalendarEventId,
+    Guid HouseholdId,
     DateTime DeletedAt) : DomainEvent;

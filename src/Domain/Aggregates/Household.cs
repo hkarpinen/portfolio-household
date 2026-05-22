@@ -33,7 +33,7 @@ public sealed class Household : IAggregateRoot
             IsActive = true
         };
         household._domainEvents.Add(new HouseholdCreated(
-            household.Id, ownerId, name, description, currencyCode, now));
+            household.Id.Value, ownerId.Value, name, description, currencyCode, now));
         return household;
     }
 
@@ -43,7 +43,7 @@ public sealed class Household : IAggregateRoot
         Description = description;
         CurrencyCode = currencyCode;
         UpdatedAt = DateTime.UtcNow;
-        _domainEvents.Add(new HouseholdUpdated(Id, name, description, currencyCode, UpdatedAt));
+        _domainEvents.Add(new HouseholdUpdated(Id.Value, name, description, currencyCode, UpdatedAt));
     }
 
     public void TransferOwnership(UserId newOwnerId)
@@ -51,14 +51,14 @@ public sealed class Household : IAggregateRoot
         var previous = OwnerId;
         OwnerId = newOwnerId;
         UpdatedAt = DateTime.UtcNow;
-        _domainEvents.Add(new HouseholdOwnershipTransferred(Id, previous, newOwnerId, UpdatedAt));
+        _domainEvents.Add(new HouseholdOwnershipTransferred(Id.Value, previous.Value, newOwnerId.Value, UpdatedAt));
     }
 
     public void Delete()
     {
         IsActive = false;
         UpdatedAt = DateTime.UtcNow;
-        _domainEvents.Add(new HouseholdDeleted(Id, UpdatedAt));
+        _domainEvents.Add(new HouseholdDeleted(Id.Value, UpdatedAt));
     }
 
     public IReadOnlyCollection<DomainEvent> DomainEvents => _domainEvents.AsReadOnly();

@@ -36,7 +36,7 @@ public class HouseholdMembershipTests
     [Fact]
     public void CreateWithInvitation_SetsInactiveWithCode()
     {
-        var membership = HouseholdMembership.CreateWithInvitation(NewHouseholdId(), NewUserId());
+        var membership = HouseholdMembership.CreateWithInvitation(NewHouseholdId(), "Test Household", NewUserId());
 
         Assert.False(membership.IsActive);
         Assert.NotNull(membership.InvitationCode);
@@ -47,7 +47,7 @@ public class HouseholdMembershipTests
     [Fact]
     public void CreateWithInvitation_RaisesHouseholdMemberInvitedEvent()
     {
-        var membership = HouseholdMembership.CreateWithInvitation(NewHouseholdId(), NewUserId());
+        var membership = HouseholdMembership.CreateWithInvitation(NewHouseholdId(), "Test Household", NewUserId());
 
         Assert.Single(membership.DomainEvents);
         Assert.IsType<HouseholdMemberInvited>(membership.DomainEvents.First());
@@ -56,7 +56,7 @@ public class HouseholdMembershipTests
     [Fact]
     public void AcceptInvitation_ActivatesMembershipWithUserId()
     {
-        var membership = HouseholdMembership.CreateWithInvitation(NewHouseholdId(), NewUserId());
+        var membership = HouseholdMembership.CreateWithInvitation(NewHouseholdId(), "Test Household", NewUserId());
         membership.ClearDomainEvents();
         var joiningUser = NewUserId();
 
@@ -69,7 +69,7 @@ public class HouseholdMembershipTests
     [Fact]
     public void AcceptInvitation_RaisesHouseholdMemberJoinedEvent()
     {
-        var membership = HouseholdMembership.CreateWithInvitation(NewHouseholdId(), NewUserId());
+        var membership = HouseholdMembership.CreateWithInvitation(NewHouseholdId(), "Test Household", NewUserId());
         membership.ClearDomainEvents();
 
         membership.AcceptInvitation(NewUserId());
