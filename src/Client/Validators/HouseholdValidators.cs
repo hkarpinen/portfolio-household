@@ -1,5 +1,5 @@
-using Client.Controllers;
 using FluentValidation;
+using Household.Application.Dtos;
 
 namespace Client.Validators;
 

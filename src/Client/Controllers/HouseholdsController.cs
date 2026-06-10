@@ -1,4 +1,5 @@
 using Household.Application.Commands;
+using Household.Application.Dtos;
 using Household.Application.Managers;
 using Household.Application.Queries;
 using Microsoft.AspNetCore.Mvc;
@@ -36,7 +37,7 @@ public sealed class HouseholdsController(
     public async Task<IActionResult> CreateHousehold([FromBody] CreateHouseholdRequest request, CancellationToken ct)
     {
         var id = await householdManager.CreateAsync(new CreateHouseholdCommand(
-            CurrentUserId, request.Name, request.Description, string.IsNullOrEmpty(request.CurrencyCode) ? "USD" : request.CurrencyCode), ct);
+            CurrentUserId, request.Name, request.Description, string.IsNullOrEmpty(request.CurrencyCode) ? "USD" : request.CurrencyCode, request.Timezone), ct);
         return CreatedAtAction(nameof(GetHousehold), new { id }, new { id });
     }
 
@@ -45,7 +46,7 @@ public sealed class HouseholdsController(
     public async Task<IActionResult> UpdateHousehold(Guid id, [FromBody] UpdateHouseholdRequest request, CancellationToken ct)
     {
         await householdManager.UpdateAsync(new UpdateHouseholdCommand(
-            id, CurrentUserId, request.Name, request.Description, request.CurrencyCode), ct);
+            id, CurrentUserId, request.Name, request.Description, request.CurrencyCode, request.Timezone), ct);
         return NoContent();
     }
 
@@ -121,11 +122,3 @@ public sealed class HouseholdsController(
         return NoContent();
     }
 }
-
-// Request models
-public sealed record CreateHouseholdRequest(string Name, string? Description, string CurrencyCode);
-public sealed record InviteRequest(string? RecipientEmail);
-public sealed record UpdateHouseholdRequest(string Name, string? Description, string CurrencyCode);
-public sealed record TransferOwnershipRequest(Guid NewOwnerId);
-public sealed record AcceptInvitationRequest(string InvitationCode);
-public sealed record ChangeMemberRoleRequest(Household.Domain.ValueObjects.HouseholdRole Role);

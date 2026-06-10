@@ -4,14 +4,16 @@ public sealed record CreateHouseholdCommand(
     Guid RequestingUserId,
     string Name,
     string? Description,
-    string CurrencyCode);
+    string CurrencyCode,
+    string? Timezone = null);
 
 public sealed record UpdateHouseholdCommand(
     Guid HouseholdId,
     Guid RequestingUserId,
     string Name,
     string? Description,
-    string CurrencyCode);
+    string CurrencyCode,
+    string? Timezone = null);
 
 public sealed record TransferOwnershipCommand(
     Guid HouseholdId,

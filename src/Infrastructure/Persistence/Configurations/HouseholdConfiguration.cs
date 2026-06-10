@@ -17,5 +17,6 @@ internal sealed class HouseholdConfiguration : IEntityTypeConfiguration<Househol
         builder.Property(h => h.Name).HasMaxLength(100).IsRequired();
         builder.Property(h => h.Description).HasMaxLength(500);
         builder.Property(h => h.CurrencyCode).HasMaxLength(3).IsRequired();
+        builder.Property(h => h.Timezone).HasMaxLength(64).IsRequired().HasDefaultValue("UTC");
     }
 }

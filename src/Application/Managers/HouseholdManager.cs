@@ -20,7 +20,7 @@ public sealed class HouseholdManager(
     public async Task<Guid> CreateAsync(CreateHouseholdCommand cmd, CancellationToken ct = default)
     {
         var ownerId = UserId.Create(cmd.RequestingUserId);
-        var household = Domain.Aggregates.Household.Create(ownerId, cmd.Name, cmd.Description, cmd.CurrencyCode);
+        var household = Domain.Aggregates.Household.Create(ownerId, cmd.Name, cmd.Description, cmd.CurrencyCode, cmd.Timezone);
         await householdRepo.AddAsync(household, ct);
 
         // Owner auto-joins as Owner role
@@ -36,7 +36,7 @@ public sealed class HouseholdManager(
         var household = await householdRepo.GetByIdAsync(HouseholdId.Create(cmd.HouseholdId), ct)
             ?? throw new KeyNotFoundException($"Household {cmd.HouseholdId} not found.");
         EnsureOwnerOrAdmin(household, cmd.RequestingUserId);
-        household.Update(cmd.Name, cmd.Description, cmd.CurrencyCode);
+        household.Update(cmd.Name, cmd.Description, cmd.CurrencyCode, cmd.Timezone);
         await householdRepo.SaveChangesAsync(ct);
     }
 

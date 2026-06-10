@@ -8,6 +8,7 @@ public sealed record HouseholdDetailDto(
     string? Description,
     Guid OwnerId,
     string CurrencyCode,
+    string Timezone,
     DateTime CreatedAt,
     int MemberCount);
 
@@ -16,6 +17,7 @@ public sealed record HouseholdSummaryDto(
     string Name,
     string? Description,
     string CurrencyCode,
+    string Timezone,
     HouseholdRole Role,
     DateTime JoinedAt,
     int MemberCount,

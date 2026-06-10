@@ -26,6 +26,7 @@ internal sealed class HouseholdQuery(HouseholdDbContext db) : IHouseholdQuery
             household.Description,
             household.OwnerId.Value,
             household.CurrencyCode,
+            household.Timezone,
             household.CreatedAt,
             memberCount);
     }
@@ -56,7 +57,7 @@ internal sealed class HouseholdQuery(HouseholdDbContext db) : IHouseholdQuery
         return memberships
             .Join(households, m => m.HouseholdId, h => h.Id,
                 (m, h) => new HouseholdSummaryDto(
-                    h.Id.Value, h.Name, h.Description, h.CurrencyCode, m.Role, m.JoinedAt,
+                    h.Id.Value, h.Name, h.Description, h.CurrencyCode, h.Timezone, m.Role, m.JoinedAt,
                     countMap.GetValueOrDefault(h.Id, 0),
                     h.CreatedAt))
             .ToList();

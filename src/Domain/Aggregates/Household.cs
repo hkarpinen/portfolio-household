@@ -12,13 +12,15 @@ public sealed class Household : IAggregateRoot
     public string? Description { get; private set; }
     public UserId OwnerId { get; private set; }
     public string CurrencyCode { get; private set; } = "USD";
+    /// <summary>IANA timezone identifier (e.g. "America/Los_Angeles"). Defaults to UTC.</summary>
+    public string Timezone { get; private set; } = "UTC";
     public DateTime CreatedAt { get; private set; }
     public DateTime UpdatedAt { get; private set; }
     public bool IsActive { get; private set; }
 
     private Household() { }
 
-    public static Household Create(UserId ownerId, string name, string? description, string currencyCode)
+    public static Household Create(UserId ownerId, string name, string? description, string currencyCode, string? timezone = null)
     {
         var now = DateTime.UtcNow;
         var household = new Household
@@ -28,6 +30,7 @@ public sealed class Household : IAggregateRoot
             Name = name,
             Description = description,
             CurrencyCode = currencyCode,
+            Timezone = string.IsNullOrWhiteSpace(timezone) ? "UTC" : timezone,
             CreatedAt = now,
             UpdatedAt = now,
             IsActive = true
@@ -37,11 +40,13 @@ public sealed class Household : IAggregateRoot
         return household;
     }
 
-    public void Update(string name, string? description, string currencyCode)
+    public void Update(string name, string? description, string currencyCode, string? timezone = null)
     {
         Name = name;
         Description = description;
         CurrencyCode = currencyCode;
+        if (!string.IsNullOrWhiteSpace(timezone))
+            Timezone = timezone;
         UpdatedAt = DateTime.UtcNow;
         _domainEvents.Add(new HouseholdUpdated(Id.Value, name, description, currencyCode, UpdatedAt));
     }
