@@ -1,5 +1,7 @@
 # portfolio-household
 
+> Bounded context: see [/ARCHITECTURE-boundaries.md](../ARCHITECTURE-boundaries.md). This service owns Household, Membership, Chores, Calendar; finance references households by opaque `Guid` only.
+
 Household management service. Groups of users (housemates, families, flatmates) form a household and use it to coordinate shared life: chore assignments and rotation schedules, a shared calendar for events, and membership management with owner/admin/member roles.
 
 Intentionally separate from the finance service — tracking who needs to clean the kitchen is a different domain from tracking who owes $42 for utilities.

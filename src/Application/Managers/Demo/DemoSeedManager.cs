@@ -64,6 +64,14 @@ internal sealed class DemoSeedManager : IDemoSeedManager
 
         if (householdIds.Count > 0)
         {
+            // Emit HouseholdDeleted for each demo household BEFORE tearing the rows down, so finance
+            // (and any other consumer) cleans up its derived state — a demo household must not leave
+            // an orphan group ledger behind. The soft-delete + outbox row commit here; the bulk
+            // hard-deletes below then remove the actual household/chore/calendar/membership rows.
+            foreach (var household in households)
+                household.Delete();
+            await _householdRepo.SaveChangesAsync(ct);
+
             await _choreRepo.DeleteByHouseholdIdsAsync(householdIds, ct);
             await _calendarRepo.DeleteByHouseholdIdsAsync(householdIds, ct);
         }
