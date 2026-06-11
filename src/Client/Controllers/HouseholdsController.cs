@@ -4,6 +4,7 @@ using Household.Application.Managers;
 using Household.Application.Queries;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Client.Controllers;
 
@@ -120,5 +121,20 @@ public sealed class HouseholdsController(
     {
         await membershipManager.ChangeRoleAsync(new ChangeMemberRoleCommand(id, membershipId, CurrentUserId, request.Role), ct);
         return NoContent();
+    }
+
+    // GET /api/households/{id}/activity?page=&pageSize=
+    [HttpGet("{id:guid}/activity")]
+    public async Task<IActionResult> GetActivity(
+        Guid id,
+        [FromQuery] int page,
+        [FromQuery] int pageSize,
+        [FromServices] IActivityFeedQuery activityQuery,
+        CancellationToken ct)
+    {
+        if (page < 1) page = 1;
+        if (pageSize < 1 || pageSize > 100) pageSize = 25;
+        var result = await activityQuery.ListAsync(id, page, pageSize, ct);
+        return Ok(result);
     }
 }

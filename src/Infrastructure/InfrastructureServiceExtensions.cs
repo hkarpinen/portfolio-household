@@ -57,6 +57,7 @@ public static class InfrastructureServiceExtensions
         services.AddScoped<IChoreQuery, ChoreQuery>();
         services.AddScoped<ICalendarEventQuery, CalendarEventQuery>();
         services.AddScoped<IDemoQuery, DemoQuery>();
+        services.AddScoped<IActivityFeedQuery, ActivityFeedQuery>();
 
         services.AddHostedService<OutboxPublisher>();
 

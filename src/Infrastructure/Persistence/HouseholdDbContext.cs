@@ -15,6 +15,7 @@ public sealed class HouseholdDbContext : DbContext
     public DbSet<UserProjection> UserProjections => Set<UserProjection>();
     public DbSet<ProcessedEvent> ProcessedEvents => Set<ProcessedEvent>();
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
+    public DbSet<ActivityEventRecord> ActivityEvents => Set<ActivityEventRecord>();
 
     public HouseholdDbContext(DbContextOptions<HouseholdDbContext> options) : base(options) { }
 
@@ -31,10 +32,29 @@ public sealed class HouseholdDbContext : DbContext
             .Select(e => e.Entity)
             .ToList();
 
+        // Build a lookup of user display names from the change-tracked UserProjection rows
+        // that are already loaded in this DbContext instance. Falls back to empty string when
+        // the projection row is not in memory — avoids a synchronous DB call here.
+        var userDisplayNames = ChangeTracker.Entries<UserProjection>()
+            .ToDictionary(e => e.Entity.Id, e => e.Entity.DisplayName);
+
+        string? ResolveDisplayName(Guid userId)
+        {
+            userDisplayNames.TryGetValue(userId, out var name);
+            return name;
+        }
+
         foreach (var aggregate in aggregates)
         {
             foreach (var domainEvent in aggregate.DomainEvents)
+            {
                 this.AddToOutbox(domainEvent);
+
+                // Also project relevant events into the activity feed read model.
+                var activity = ActivityFeedProjector.TryProject(domainEvent, ResolveDisplayName);
+                if (activity is not null)
+                    ActivityEvents.Add(activity);
+            }
             aggregate.ClearDomainEvents();
         }
     }
