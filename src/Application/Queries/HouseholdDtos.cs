@@ -29,4 +29,5 @@ public sealed record MemberDto(
     string Username,
     string? DisplayName,
     HouseholdRole Role,
-    DateTime JoinedAt);
+    DateTime JoinedAt,
+    string? PendingInvitationCode);

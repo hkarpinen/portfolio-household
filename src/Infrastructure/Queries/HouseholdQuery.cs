@@ -66,21 +66,34 @@ internal sealed class HouseholdQuery(HouseholdDbContext db) : IHouseholdQuery
     public async Task<IReadOnlyList<MemberDto>> ListMembersAsync(Guid householdId, CancellationToken ct = default)
     {
         var hid = HouseholdId.Create(householdId);
+        // Include pending invitations (IsActive=false + InvitationCode set) alongside active members,
+        // so the frontend can display "pending: code XYZ" rows next to active members.
         var memberships = await db.Memberships
             .AsNoTracking()
-            .Where(m => m.HouseholdId == hid && m.IsActive)
+            .Where(m => m.HouseholdId == hid && (m.IsActive || m.InvitationCode != null))
             .ToListAsync(ct);
 
-        var userIds = memberships.Select(m => m.UserId.Value).ToList();
+        var userIds = memberships.Where(m => m.IsActive).Select(m => m.UserId.Value).ToList();
         var users = await db.UserProjections
             .AsNoTracking()
             .Where(u => userIds.Contains(u.Id))
             .ToListAsync(ct);
+        var userMap = users.ToDictionary(u => u.Id);
 
         return memberships
-            .Join(users, m => m.UserId.Value, u => u.Id,
-                (m, u) => new MemberDto(
-                    m.Id.Value, m.UserId.Value, u.Username, u.DisplayName, m.Role, m.JoinedAt))
+            .Select(m =>
+            {
+                userMap.TryGetValue(m.UserId.Value, out var user);
+                return new MemberDto(
+                    MembershipId: m.Id.Value,
+                    UserId: m.UserId.Value,
+                    Username: user?.Username ?? string.Empty,
+                    DisplayName: user?.DisplayName,
+                    Role: m.Role,
+                    JoinedAt: m.JoinedAt,
+                    // Surfaces the existing domain field. Accepted memberships have IsActive=true and a cleared code.
+                    PendingInvitationCode: m.IsActive ? null : m.InvitationCode);
+            })
             .ToList();
     }
 }
