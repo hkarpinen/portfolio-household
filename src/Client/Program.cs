@@ -88,21 +88,29 @@ try
     builder.Services.AddFluentValidationAutoValidation();
     builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
+    // Problem details for standardised error responses (RFC 7807)
+    builder.Services.AddProblemDetails(options =>
+    {
+        options.CustomizeProblemDetails = ctx =>
+        {
+            ctx.ProblemDetails.Instance ??= $"{ctx.HttpContext.Request.Method} {ctx.HttpContext.Request.Path}";
+            ctx.ProblemDetails.Extensions["traceId"] = ctx.HttpContext.TraceIdentifier;
+        };
+    });
+
+    // Centralized exception→status mapping. The single place the error contract lives;
+    // controllers raise domain exceptions and this maps them to ProblemDetails responses.
+    builder.Services.AddExceptionHandler<Client.Infrastructure.DomainExceptionHandler>();
+
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen();
     builder.Services.AddHealthChecks();
 
     var app = builder.Build();
 
-    app.UseExceptionHandler(exceptionApp =>
-    {
-        exceptionApp.Run(async context =>
-        {
-            context.Response.StatusCode = StatusCodes.Status500InternalServerError;
-            context.Response.ContentType = "application/json";
-            await context.Response.WriteAsJsonAsync(new { error = "An unexpected error occurred." });
-        });
-    });
+    // ProblemDetails-aware exception + status-code handling
+    app.UseExceptionHandler();
+    app.UseStatusCodePages();
 
     app.UseSerilogRequestLogging();
     app.UseCors();

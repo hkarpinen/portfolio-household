@@ -46,32 +46,19 @@ public sealed class CalendarController(
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> Update(Guid householdId, Guid id, [FromBody] UpdateCalendarEventRequest request, CancellationToken ct)
     {
-        try
-        {
-            await calendarManager.UpdateAsync(new UpdateCalendarEventCommand(
-                id, householdId, CurrentUserId, request.Title, request.Description,
-                request.StartsAt, request.EndsAt, request.AllDay,
-                request.RecurrenceFrequency, request.RecurrenceEndDate), ct);
-            return NoContent();
-        }
-        catch (InvalidOperationException ex)
-        {
-            // Aggregate rejected the edit — bill-sourced entries are read-only here.
-            return StatusCode(StatusCodes.Status403Forbidden, new { error = ex.Message });
-        }
+        // Domain exceptions (e.g. editing a read-only bill-sourced entry) are mapped to
+        // ProblemDetails responses centrally by DomainExceptionHandler — no try/catch here.
+        await calendarManager.UpdateAsync(new UpdateCalendarEventCommand(
+            id, householdId, CurrentUserId, request.Title, request.Description,
+            request.StartsAt, request.EndsAt, request.AllDay,
+            request.RecurrenceFrequency, request.RecurrenceEndDate), ct);
+        return NoContent();
     }
 
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid householdId, Guid id, CancellationToken ct)
     {
-        try
-        {
-            await calendarManager.DeleteAsync(new DeleteCalendarEventCommand(id, householdId, CurrentUserId), ct);
-            return NoContent();
-        }
-        catch (InvalidOperationException ex)
-        {
-            return StatusCode(StatusCodes.Status403Forbidden, new { error = ex.Message });
-        }
+        await calendarManager.DeleteAsync(new DeleteCalendarEventCommand(id, householdId, CurrentUserId), ct);
+        return NoContent();
     }
 }

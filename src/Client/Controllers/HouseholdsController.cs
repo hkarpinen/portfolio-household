@@ -130,15 +130,11 @@ public sealed class HouseholdsController(
     [HttpPost("{id:guid}/charges/{chargeId:guid}/allocations")]
     public async Task<IActionResult> AssignAllocation(Guid id, Guid chargeId, [FromBody] AssignAllocationRequest request, CancellationToken ct)
     {
-        try
-        {
-            await membershipManager.AssignAllocationAsync(
-                new AssignAllocationCommand(id, chargeId, CurrentUserId, request.UserId, request.Amount, request.Currency), ct);
-            return Accepted();
-        }
-        catch (UnauthorizedAccessException ex) { return StatusCode(StatusCodes.Status403Forbidden, new { error = ex.Message }); }
-        catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
-        catch (ArgumentException ex) { return BadRequest(new { error = ex.Message }); }
+        // Authorization/validation failures surface as domain exceptions and are mapped to
+        // ProblemDetails responses centrally by DomainExceptionHandler — no try/catch here.
+        await membershipManager.AssignAllocationAsync(
+            new AssignAllocationCommand(id, chargeId, CurrentUserId, request.UserId, request.Amount, request.Currency), ct);
+        return Accepted();
     }
 
     // GET /api/households/{id}/activity?page=&pageSize=
