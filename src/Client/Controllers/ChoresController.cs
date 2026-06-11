@@ -1,4 +1,5 @@
 using Household.Application.Commands;
+using Household.Application.Dtos;
 using Household.Application.Managers;
 using Household.Application.Queries;
 using Household.Domain.ValueObjects;
@@ -33,7 +34,7 @@ public sealed class ChoresController(
     public async Task<IActionResult> Create(Guid householdId, [FromBody] CreateChoreRequest request, CancellationToken ct)
     {
         var id = await choreManager.CreateAsync(new CreateChoreCommand(
-            householdId, CurrentUserId, request.Title, request.Description, request.DueDate, request.RecurrenceFrequency), ct);
+            householdId, CurrentUserId, request.Title, request.Description, request.DueDate, request.RecurrenceFrequency, request.InitialAssigneeUserId), ct);
         return CreatedAtAction(nameof(Get), new { householdId, id }, new { id });
     }
 
@@ -58,6 +59,3 @@ public sealed class ChoresController(
         return NoContent();
     }
 }
-
-public sealed record CreateChoreRequest(string Title, string? Description, DateTime? DueDate, RecurrenceFrequency? RecurrenceFrequency);
-public sealed record AssignChoreRequest(Guid AssignToUserId);

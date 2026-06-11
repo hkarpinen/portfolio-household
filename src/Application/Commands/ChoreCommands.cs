@@ -8,7 +8,8 @@ public sealed record CreateChoreCommand(
     string Title,
     string? Description,
     DateTime? DueDate,
-    RecurrenceFrequency? RecurrenceFrequency);
+    RecurrenceFrequency? RecurrenceFrequency,
+    Guid? InitialAssigneeUserId = null);
 
 public sealed record AssignChoreCommand(
     Guid ChoreId,

@@ -29,6 +29,11 @@ public sealed class ChoreManager(
             cmd.DueDate,
             cmd.RecurrenceFrequency);
         await choreRepo.AddAsync(chore, ct);
+
+        // Optional initial assignee — done in the same transaction as create so the chore lands assigned.
+        if (cmd.InitialAssigneeUserId is { } assigneeId)
+            chore.Assign(UserId.Create(assigneeId));
+
         await choreRepo.SaveChangesAsync(ct);
         return chore.Id.Value;
     }
