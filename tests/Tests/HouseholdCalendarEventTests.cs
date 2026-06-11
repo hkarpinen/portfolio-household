@@ -105,4 +105,69 @@ public class HouseholdCalendarEventTests
         Assert.Single(ev.DomainEvents);
         Assert.IsType<CalendarEventDeleted>(ev.DomainEvents.First());
     }
+
+    // ── Bill-path mutators are projection-only (no domain events) ─────────────
+    // These mirror finance's authoritative Charge lifecycle into a local read model.
+    // They must NOT raise domain events — doing so would drain them to the outbox
+    // (see HouseholdDbContext.DrainDomainEventsToOutbox) and re-publish a change
+    // household never authored. This guard asserts the asymmetric event contract.
+
+    private static HouseholdCalendarEvent CreateBillEvent() =>
+        HouseholdCalendarEvent.CreateFromBill(
+            NewHouseholdId(), NewUserId(), Guid.NewGuid(), "Electric bill",
+            DateTime.UtcNow.AddDays(3), RecurrenceFrequency.Monthly, null);
+
+    [Fact]
+    public void CreateFromBill_RaisesNoDomainEvent()
+    {
+        var ev = CreateBillEvent();
+
+        Assert.Empty(ev.DomainEvents);
+        Assert.Equal(CalendarEventSource.FinanceBill, ev.Source);
+    }
+
+    [Fact]
+    public void UpdateFromBill_RaisesNoDomainEvent()
+    {
+        var ev = CreateBillEvent();
+
+        ev.UpdateFromBill("Electric bill (revised)", DateTime.UtcNow.AddDays(5), RecurrenceFrequency.Monthly, null);
+
+        Assert.Empty(ev.DomainEvents);
+        Assert.Equal("Electric bill (revised)", ev.Title);
+    }
+
+    [Fact]
+    public void DeactivateFromBill_RaisesNoDomainEvent()
+    {
+        var ev = CreateBillEvent();
+
+        ev.DeactivateFromBill();
+
+        Assert.Empty(ev.DomainEvents);
+        Assert.NotNull(ev.DeletedAt);
+    }
+
+    [Fact]
+    public void ActivateFromBill_RaisesNoDomainEvent()
+    {
+        var ev = CreateBillEvent();
+        ev.DeactivateFromBill();
+
+        ev.ActivateFromBill();
+
+        Assert.Empty(ev.DomainEvents);
+        Assert.Null(ev.DeletedAt);
+    }
+
+    [Fact]
+    public void BillMutators_RejectMemberSourcedEvents()
+    {
+        var member = CreateEvent();
+
+        Assert.Throws<InvalidOperationException>(() =>
+            member.UpdateFromBill("x", DateTime.UtcNow, null, null));
+        Assert.Throws<InvalidOperationException>(() => member.DeactivateFromBill());
+        Assert.Throws<InvalidOperationException>(() => member.ActivateFromBill());
+    }
 }

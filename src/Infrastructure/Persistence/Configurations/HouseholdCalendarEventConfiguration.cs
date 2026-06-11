@@ -18,6 +18,12 @@ internal sealed class HouseholdCalendarEventConfiguration : IEntityTypeConfigura
             .HasConversion(id => id.Value, v => UserId.Create(v));
         builder.Property(e => e.Title).HasMaxLength(200).IsRequired();
         builder.Property(e => e.Description).HasMaxLength(1000);
+        builder.Property(e => e.Source).HasConversion<int>();
+        // `(Source, LinkedExpenseId)` is the upsert key for bill-sourced entries.
+        // Filtered unique index in snake_case to dodge the naming-convention HasFilter trap.
+        builder.HasIndex(e => new { e.Source, e.LinkedExpenseId })
+            .IsUnique()
+            .HasFilter("source = 1 AND linked_expense_id IS NOT NULL");
         builder.HasIndex(e => e.HouseholdId);
     }
 }

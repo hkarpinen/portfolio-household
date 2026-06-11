@@ -33,6 +33,11 @@ public static class InfrastructureServiceExtensions
             x.AddConsumer<UserProfileUpdatedConsumer>();
             x.AddConsumer<DemoUserCreatedConsumer>();
             x.AddConsumer<DemoUserExpiredConsumer>();
+            x.AddConsumer<ChargeCreatedConsumer>();
+            x.AddConsumer<ChargeUpdatedConsumer>();
+            x.AddConsumer<ChargeDeactivatedConsumer>();
+            x.AddConsumer<ChargeActivatedConsumer>();
+            x.AddConsumer<SettlementRecordedConsumer>();
 
             x.UsingRabbitMq((context, cfg) =>
             {

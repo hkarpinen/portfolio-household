@@ -1,10 +1,8 @@
 using Household.Domain.ValueObjects;
 
-namespace Household.Application.Commands;
+namespace Household.Application.Dtos;
 
-public sealed record CreateCalendarEventCommand(
-    Guid HouseholdId,
-    Guid RequestingUserId,
+public sealed record CreateCalendarEventRequest(
     string Title,
     string? Description,
     DateTime StartsAt,
@@ -13,10 +11,7 @@ public sealed record CreateCalendarEventCommand(
     RecurrenceFrequency? RecurrenceFrequency = null,
     DateTime? RecurrenceEndDate = null);
 
-public sealed record UpdateCalendarEventCommand(
-    Guid CalendarEventId,
-    Guid HouseholdId,
-    Guid RequestingUserId,
+public sealed record UpdateCalendarEventRequest(
     string Title,
     string? Description,
     DateTime StartsAt,
@@ -24,8 +19,3 @@ public sealed record UpdateCalendarEventCommand(
     bool AllDay,
     RecurrenceFrequency? RecurrenceFrequency = null,
     DateTime? RecurrenceEndDate = null);
-
-public sealed record DeleteCalendarEventCommand(
-    Guid CalendarEventId,
-    Guid HouseholdId,
-    Guid RequestingUserId);

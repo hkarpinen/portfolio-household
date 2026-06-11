@@ -27,7 +27,9 @@ public sealed class CalendarEventManager(
             cmd.Description,
             cmd.StartsAt,
             cmd.EndsAt,
-            cmd.AllDay);
+            cmd.AllDay,
+            cmd.RecurrenceFrequency,
+            cmd.RecurrenceEndDate);
         await calendarRepo.AddAsync(ev, ct);
         await calendarRepo.SaveChangesAsync(ct);
         return ev.Id.Value;
@@ -40,7 +42,9 @@ public sealed class CalendarEventManager(
 
         var ev = await calendarRepo.GetByIdAsync(CalendarEventId.Create(cmd.CalendarEventId), ct);
         if (ev is null) throw new KeyNotFoundException("Calendar event not found.");
-        ev.Update(cmd.Title, cmd.Description, cmd.StartsAt, cmd.EndsAt, cmd.AllDay);
+        ev.Update(
+            cmd.Title, cmd.Description, cmd.StartsAt, cmd.EndsAt, cmd.AllDay,
+            cmd.RecurrenceFrequency, cmd.RecurrenceEndDate);
         await calendarRepo.SaveChangesAsync(ct);
     }
 

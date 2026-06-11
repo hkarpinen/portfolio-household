@@ -31,4 +31,25 @@ public readonly record struct UserId(Guid Value)
 
 public enum HouseholdRole { Member, Admin, Owner }
 
-public enum RecurrenceFrequency { Daily, Weekly, BiWeekly, Monthly }
+/// <summary>
+/// Shared with finance's `RecurrenceFrequency` (same int values, same names) so a bill
+/// recurrence consumed off the wire round-trips into household without remapping.
+/// </summary>
+public enum RecurrenceFrequency
+{
+    Daily = 0,
+    Weekly = 1,
+    BiWeekly = 2,
+    Monthly = 3,
+    Quarterly = 4,
+    SemiAnnually = 5,
+    Annually = 6
+}
+
+/// <summary>
+/// Discriminates who/what authored a calendar event. `Member` is a user-created
+/// entry; `FinanceBill` is mirrored from a finance shared-expense event and is
+/// read-only on this side — `Update`/`Delete` reject non-`Member` sources so the
+/// API can 403 cleanly and finance stays the source of truth.
+/// </summary>
+public enum CalendarEventSource { Member = 0, FinanceBill = 1 }
