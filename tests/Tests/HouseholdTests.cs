@@ -113,4 +113,25 @@ public class HouseholdTests
 
         Assert.Empty(household.DomainEvents);
     }
+
+    // ── Allocation authorization lives on the Household aggregate (it owns role checks) ──
+
+    [Fact]
+    public void AssignAllocation_RaisesGroupAllocationAssigned_OnHousehold()
+    {
+        var household = HouseholdModel.Create(NewUserId(), "Name", null, "USD");
+        household.ClearDomainEvents();
+        var forUser = NewUserId();
+        var chargeId = Guid.NewGuid();
+
+        household.AssignAllocation(chargeId, forUser, 42.50m, "USD");
+
+        var ev = Assert.IsType<GroupAllocationAssigned>(Assert.Single(household.DomainEvents));
+        // GroupId is the household id; UserId is the authoritative target member.
+        Assert.Equal(household.Id.Value, ev.GroupId);
+        Assert.Equal(forUser.Value, ev.UserId);
+        Assert.Equal(chargeId, ev.ChargeId);
+        Assert.Equal(42.50m, ev.Amount);
+        Assert.Equal("USD", ev.Currency);
+    }
 }

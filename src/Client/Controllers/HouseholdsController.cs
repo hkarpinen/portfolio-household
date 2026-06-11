@@ -123,6 +123,24 @@ public sealed class HouseholdsController(
         return NoContent();
     }
 
+    // POST /api/households/{id}/charges/{chargeId}/allocations
+    // Role-gated allocation assignment: a member may assign their OWN share; assigning another
+    // member's share requires Owner/Admin. Household authorizes here, then emits an event finance
+    // consumes — no service-to-service call, so this returns 202 (the allocation lands eventually).
+    [HttpPost("{id:guid}/charges/{chargeId:guid}/allocations")]
+    public async Task<IActionResult> AssignAllocation(Guid id, Guid chargeId, [FromBody] AssignAllocationRequest request, CancellationToken ct)
+    {
+        try
+        {
+            await membershipManager.AssignAllocationAsync(
+                new AssignAllocationCommand(id, chargeId, CurrentUserId, request.UserId, request.Amount, request.Currency), ct);
+            return Accepted();
+        }
+        catch (UnauthorizedAccessException ex) { return StatusCode(StatusCodes.Status403Forbidden, new { error = ex.Message }); }
+        catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
+        catch (ArgumentException ex) { return BadRequest(new { error = ex.Message }); }
+    }
+
     // GET /api/households/{id}/activity?page=&pageSize=
     [HttpGet("{id:guid}/activity")]
     public async Task<IActionResult> GetActivity(

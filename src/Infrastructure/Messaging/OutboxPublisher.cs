@@ -26,6 +26,7 @@ internal sealed class OutboxPublisher : BackgroundService
         [nameof(HouseholdMemberRemoved)]        = typeof(HouseholdMemberRemoved),
         [nameof(HouseholdMemberRoleChanged)]    = typeof(HouseholdMemberRoleChanged),
         [nameof(HouseholdMemberInvited)]        = typeof(HouseholdMemberInvited),
+        [nameof(GroupAllocationAssigned)]       = typeof(GroupAllocationAssigned),
         [nameof(ChoreCreated)]                  = typeof(ChoreCreated),
         [nameof(ChoreAssigned)]                 = typeof(ChoreAssigned),
         [nameof(ChoreCompleted)]                = typeof(ChoreCompleted),

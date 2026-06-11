@@ -13,6 +13,7 @@ public interface IMembershipManager
     Task LeaveAsync(LeaveHouseholdCommand command, CancellationToken ct = default);
     Task RemoveAsync(RemoveMemberCommand command, CancellationToken ct = default);
     Task ChangeRoleAsync(ChangeMemberRoleCommand command, CancellationToken ct = default);
+    Task AssignAllocationAsync(AssignAllocationCommand command, CancellationToken ct = default);
 }
 
 public sealed class MembershipManager(
@@ -102,6 +103,37 @@ public sealed class MembershipManager(
 
         membership.ChangeRole(cmd.NewRole);
         await membershipRepo.SaveChangesAsync(ct);
+    }
+
+    public async Task AssignAllocationAsync(AssignAllocationCommand cmd, CancellationToken ct = default)
+    {
+        var householdId = HouseholdId.Create(cmd.HouseholdId);
+
+        var requester = await membershipRepo.GetByHouseholdAndUserAsync(householdId, UserId.Create(cmd.RequestingUserId), ct);
+        if (requester is null || !requester.IsActive)
+            throw new UnauthorizedAccessException("User is not a member of this household.");
+
+        // A member may declare their OWN share; assigning another member's share requires Owner/Admin.
+        if (cmd.TargetUserId != cmd.RequestingUserId
+            && requester.Role is not (HouseholdRole.Admin or HouseholdRole.Owner))
+            throw new UnauthorizedAccessException("Only an owner or admin can set another member's split.");
+
+        // The target must be a member of this household (can't allocate to an outsider).
+        var target = await membershipRepo.GetByHouseholdAndUserAsync(householdId, UserId.Create(cmd.TargetUserId), ct);
+        if (target is null || !target.IsActive)
+            throw new InvalidOperationException("The target user is not a member of this household.");
+
+        if (cmd.Amount <= 0)
+            throw new ArgumentException("Allocation amount must be positive.", nameof(cmd));
+
+        // The Household aggregate owns role-authorization, so the authorized fact is emitted there
+        // (not on a membership aggregate that owns none of its state). The role check above gates
+        // this; finance owns the allocation itself. The event drains to the outbox on save and
+        // finance consumes it to upsert the allocation — no service-to-service call.
+        var household = await householdRepo.GetByIdAsync(householdId, ct)
+            ?? throw new KeyNotFoundException("Household not found.");
+        household.AssignAllocation(cmd.ChargeId, UserId.Create(cmd.TargetUserId), cmd.Amount, cmd.Currency);
+        await householdRepo.SaveChangesAsync(ct);
     }
 
     private async Task EnsureMemberAsync(HouseholdId householdId, Guid userId, CancellationToken ct)
