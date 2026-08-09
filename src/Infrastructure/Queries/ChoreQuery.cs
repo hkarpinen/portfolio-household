@@ -20,7 +20,9 @@ internal sealed class ChoreQuery(HouseholdDbContext db) : IChoreQuery
             c.Id.Value, c.HouseholdId.Value, c.Title, c.Description,
             c.AssignedToUserId.HasValue ? c.AssignedToUserId.Value.Value : null,
             c.DueDate, c.RecurrenceFrequency, c.CreatedByUserId.Value,
-            c.CreatedAt, c.CompletedAt, c.IsActive)).ToList();
+            c.CreatedAt, c.CompletedAt,
+            c.CompletedByUserId.HasValue ? c.CompletedByUserId.Value.Value : null,
+            c.IsActive)).ToList();
     }
 
     public async Task<ChoreDto?> GetByIdAsync(Guid choreId, CancellationToken ct = default)
@@ -31,6 +33,8 @@ internal sealed class ChoreQuery(HouseholdDbContext db) : IChoreQuery
         return new ChoreDto(c.Id.Value, c.HouseholdId.Value, c.Title, c.Description,
             c.AssignedToUserId.HasValue ? c.AssignedToUserId.Value.Value : null,
             c.DueDate, c.RecurrenceFrequency, c.CreatedByUserId.Value,
-            c.CreatedAt, c.CompletedAt, c.IsActive);
+            c.CreatedAt, c.CompletedAt,
+            c.CompletedByUserId.HasValue ? c.CompletedByUserId.Value.Value : null,
+            c.IsActive);
     }
 }

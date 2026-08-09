@@ -19,6 +19,9 @@ internal sealed class ChoreConfiguration : IEntityTypeConfiguration<Chore>
         builder.Property(c => c.AssignedToUserId)
             .HasConversion(id => id.HasValue ? id.Value.Value : (Guid?)null,
                            v => v.HasValue ? UserId.Create(v.Value) : (UserId?)null);
+        builder.Property(c => c.CompletedByUserId)
+            .HasConversion(id => id.HasValue ? id.Value.Value : (Guid?)null,
+                           v => v.HasValue ? UserId.Create(v.Value) : (UserId?)null);
         builder.Property(c => c.Title).HasMaxLength(200).IsRequired();
         builder.Property(c => c.Description).HasMaxLength(1000);
         builder.HasIndex(c => c.HouseholdId);

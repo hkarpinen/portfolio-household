@@ -111,4 +111,81 @@ public class ChoreTests
         Assert.Single(chore.DomainEvents);
         Assert.IsType<ChoreDeleted>(chore.DomainEvents.First());
     }
+
+
+    [Fact]
+    public void CreateNextOccurrence_ReturnsNull_WhenChoreDoesNotRepeat()
+    {
+        var chore = Chore.Create(NewHouseholdId(), NewUserId(), "Wash dishes", null, DateTime.UtcNow, null);
+
+        Assert.Null(chore.CreateNextOccurrence(DateTime.UtcNow));
+    }
+
+    [Fact]
+    public void CreateNextOccurrence_ReturnsNull_WhenChoreHasNoDueDate()
+    {
+        var chore = Chore.Create(NewHouseholdId(), NewUserId(), "Wash dishes", null, null, RecurrenceFrequency.Weekly);
+
+        Assert.Null(chore.CreateNextOccurrence(DateTime.UtcNow));
+    }
+
+    [Fact]
+    public void CreateNextOccurrence_StepsOneCycleFromTheDueDate()
+    {
+        var due = new DateTime(2026, 8, 5, 9, 0, 0, DateTimeKind.Utc);
+        var chore = Chore.Create(NewHouseholdId(), NewUserId(), "Take the bins out", "Kerb by 7am", due, RecurrenceFrequency.Weekly);
+
+        var next = chore.CreateNextOccurrence(due);
+
+        Assert.NotNull(next);
+        Assert.Equal(due.AddDays(7), next!.DueDate);
+        Assert.Equal("Take the bins out", next.Title);
+        Assert.Equal("Kerb by 7am", next.Description);
+        Assert.Equal(RecurrenceFrequency.Weekly, next.RecurrenceFrequency);
+        Assert.True(next.IsActive);
+        Assert.Null(next.CompletedAt);
+    }
+
+    [Fact]
+    public void CreateNextOccurrence_StaysOnCadence_WhenCompletedLate()
+    {
+        // Due Wednesday, actually done 16 days later. The next one is the
+        // following Wednesday after that, not "16 days from now" and not a
+        // date already in the past.
+        var due = new DateTime(2026, 8, 5, 9, 0, 0, DateTimeKind.Utc);
+        var chore = Chore.Create(NewHouseholdId(), NewUserId(), "Take the bins out", null, due, RecurrenceFrequency.Weekly);
+
+        var next = chore.CreateNextOccurrence(due.AddDays(16));
+
+        Assert.NotNull(next);
+        Assert.Equal(due.AddDays(21), next!.DueDate);
+        Assert.True(next.DueDate > due.AddDays(16));
+    }
+
+    [Fact]
+    public void CreateNextOccurrence_CarriesTheAssigneeOver()
+    {
+        var due = DateTime.UtcNow;
+        var assignee = NewUserId();
+        var chore = Chore.Create(NewHouseholdId(), NewUserId(), "Water the plants", null, due, RecurrenceFrequency.Monthly);
+        chore.Assign(assignee);
+
+        var next = chore.CreateNextOccurrence(due);
+
+        Assert.Equal(assignee, next!.AssignedToUserId);
+    }
+
+    [Fact]
+    public void CreateNextOccurrence_DoesNotMutateTheCompletedChore()
+    {
+        var due = DateTime.UtcNow;
+        var chore = Chore.Create(NewHouseholdId(), NewUserId(), "Hoover", null, due, RecurrenceFrequency.Daily);
+        chore.Complete(NewUserId());
+
+        var next = chore.CreateNextOccurrence(due);
+
+        Assert.False(chore.IsActive);
+        Assert.NotNull(chore.CompletedAt);
+        Assert.NotEqual(chore.Id, next!.Id);
+    }
 }

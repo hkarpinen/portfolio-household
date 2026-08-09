@@ -13,4 +13,5 @@ public sealed record ChoreDto(
     Guid CreatedByUserId,
     DateTime CreatedAt,
     DateTime? CompletedAt,
+    Guid? CompletedByUserId,
     bool IsActive);

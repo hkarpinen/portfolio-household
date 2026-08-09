@@ -17,6 +17,7 @@ public sealed class Chore : IAggregateRoot
     public UserId CreatedByUserId { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public DateTime? CompletedAt { get; private set; }
+    public UserId? CompletedByUserId { get; private set; }
     public bool IsActive { get; private set; }
 
     private Chore() { }
@@ -57,8 +58,27 @@ public sealed class Chore : IAggregateRoot
     public void Complete(UserId completedByUserId)
     {
         CompletedAt = DateTime.UtcNow;
+        CompletedByUserId = completedByUserId;
         IsActive = false;
         _domainEvents.Add(new ChoreCompleted(Id.Value, HouseholdId.Value, completedByUserId.Value, CompletedAt.Value));
+    }
+
+    // Stepped from THIS occurrence's due date, not from the completion time, so a chore stays on its
+    // cadence — a Wednesday bin day done late on Friday is still due the next Wednesday. Stepped
+    // forward until it lands after the completion, so one finished several cycles late does not come
+    // back already overdue. The assignee carries over.
+    public Chore? CreateNextOccurrence(DateTime completedAt)
+    {
+        if (RecurrenceFrequency is null || DueDate is null) return null;
+
+        var next = RecurrenceExpander.Advance(DueDate.Value, RecurrenceFrequency.Value);
+        while (next <= completedAt)
+            next = RecurrenceExpander.Advance(next, RecurrenceFrequency.Value);
+
+        var chore = Create(HouseholdId, CreatedByUserId, Title, Description, next, RecurrenceFrequency);
+        if (AssignedToUserId is { } assignee)
+            chore.Assign(assignee);
+        return chore;
     }
 
     public void Delete()

@@ -30,7 +30,7 @@ public sealed class ChoreManager(
             cmd.RecurrenceFrequency);
         await choreRepo.AddAsync(chore, ct);
 
-        // Optional initial assignee — done in the same transaction as create so the chore lands assigned.
+        // Assigned in the SAME transaction as the create, so the chore never exists unassigned.
         if (cmd.InitialAssigneeUserId is { } assigneeId)
             chore.Assign(UserId.Create(assigneeId));
 
@@ -57,6 +57,12 @@ public sealed class ChoreManager(
         var chore = await choreRepo.GetByIdAsync(ChoreId.Create(cmd.ChoreId), ct);
         if (chore is null) throw new KeyNotFoundException("Chore not found.");
         chore.Complete(UserId.Create(cmd.RequestingUserId));
+
+        // A repeating chore schedules its own next occurrence in the SAME transaction, so
+        // "every Wednesday" survives being ticked off.
+        if (chore.CreateNextOccurrence(DateTime.UtcNow) is { } next)
+            await choreRepo.AddAsync(next, ct);
+
         await choreRepo.SaveChangesAsync(ct);
     }
 
