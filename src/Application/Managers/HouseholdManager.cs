@@ -23,7 +23,6 @@ public sealed class HouseholdManager(
         var household = Domain.Aggregates.Household.Create(ownerId, cmd.Name, cmd.Description, cmd.CurrencyCode, cmd.Timezone);
         await householdRepo.AddAsync(household, ct);
 
-        // Owner auto-joins as Owner role
         var membership = HouseholdMembership.Create(household.Id, ownerId, HouseholdRole.Owner);
         await membershipRepo.AddAsync(membership, ct);
         await membershipRepo.SaveChangesAsync(ct);

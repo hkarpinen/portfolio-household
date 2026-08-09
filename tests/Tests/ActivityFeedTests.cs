@@ -6,9 +6,6 @@ namespace Tests;
 
 public class ActivityFeedTests
 {
-    // -----------------------------------------------------------------------
-    // ActivityEventRecord — basic POCO round-trip
-    // -----------------------------------------------------------------------
 
     [Fact]
     public void ActivityEventRecord_Properties_RoundTrip()
@@ -41,9 +38,6 @@ public class ActivityFeedTests
         Assert.Equal(now, record.OccurredAt);
     }
 
-    // -----------------------------------------------------------------------
-    // ActivityFeedProjector — unit tests, no DbContext, no EF
-    // -----------------------------------------------------------------------
 
     [Fact]
     public void TryProject_HouseholdMemberJoined_MapsToMemberJoined()

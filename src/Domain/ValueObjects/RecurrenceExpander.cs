@@ -1,20 +1,9 @@
 namespace Household.Domain.ValueObjects;
 
-/// <summary>
-/// Pure, side-effect-free expansion of a recurrence rule into concrete occurrences.
-/// This is DOMAIN logic (what a recurring rule *means* over a window) and lives next
-/// to <see cref="RecurrenceFrequency"/> so it can be unit-tested without a DbContext.
-/// Query/Resource-Access classes call into this instead of re-implementing the walk.
-/// </summary>
 public static class RecurrenceExpander
 {
-    /// <summary>
-    /// Step from <paramref name="start"/> by <paramref name="frequency"/>, yielding every
-    /// occurrence that falls in <c>[from, to]</c>. Stops at <paramref name="endDate"/> if set;
-    /// otherwise clamps at <paramref name="to"/>. The loop is bounded by the window, never
-    /// infinite — an open-ended (null end date) monthly bill yields N entries for the
-    /// requested window instead of running forever.
-    /// </summary>
+    // Stops at endDate if set, otherwise clamps at `to`. The loop is bounded by the window and never
+    // infinite — an open-ended monthly rule yields N occurrences for the window, not an endless walk.
     public static IEnumerable<DateTime> EnumerateOccurrences(
         DateTime start, RecurrenceFrequency frequency, DateTime? endDate, DateTime from, DateTime to)
     {
@@ -28,7 +17,6 @@ public static class RecurrenceExpander
         }
     }
 
-    /// <summary>Advance a single cursor by one step of the given frequency.</summary>
     public static DateTime Advance(DateTime d, RecurrenceFrequency f) => f switch
     {
         RecurrenceFrequency.Daily        => d.AddDays(1),

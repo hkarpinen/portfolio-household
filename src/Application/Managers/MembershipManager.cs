@@ -126,10 +126,9 @@ public sealed class MembershipManager(
         if (cmd.Amount <= 0)
             throw new ArgumentException("Allocation amount must be positive.", nameof(cmd));
 
-        // The Household aggregate owns role-authorization, so the authorized fact is emitted there
-        // (not on a membership aggregate that owns none of its state). The role check above gates
-        // this; finance owns the allocation itself. The event drains to the outbox on save and
-        // finance consumes it to upsert the allocation — no service-to-service call.
+        // The Household aggregate owns role-authorization, so the authorized FACT is emitted there, not
+        // on a membership aggregate that owns none of its state. The role check above is the gate; the
+        // allocation itself belongs to finance, which consumes the event.
         var household = await householdRepo.GetByIdAsync(householdId, ct)
             ?? throw new KeyNotFoundException("Household not found.");
         household.AssignAllocation(cmd.ChargeId, UserId.Create(cmd.TargetUserId), cmd.Amount, cmd.Currency);

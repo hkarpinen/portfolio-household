@@ -62,13 +62,9 @@ public sealed record HouseholdMemberRoleChanged(
     string NewRole,
     DateTime ChangedAt) : DomainEvent;
 
-/// <summary>
-/// Household has authorized (role-checked) a member's allocation — their share — on a finance
-/// charge. Finance consumes this to upsert the allocation; the <c>UserId</c> here is authoritative
-/// (household already verified the caller may act for that member). This is how a role-gated
-/// "add a split for another member" reaches finance without any service-to-service call, and
-/// without finance learning household roles. <c>GroupId</c> == the household id (same opaque Guid).
-/// </summary>
+// The UserId here is authoritative — the role check already happened, so the consumer upserts the
+// allocation without re-checking. This is how a role-gated "add a split for another member"
+// reaches finance without finance ever learning household roles. GroupId == the household id.
 public sealed record GroupAllocationAssigned(
     Guid Id,
     DateTime OccurredAt,

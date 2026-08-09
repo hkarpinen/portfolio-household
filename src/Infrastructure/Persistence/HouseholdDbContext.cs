@@ -32,9 +32,8 @@ public sealed class HouseholdDbContext : DbContext
             .Select(e => e.Entity)
             .ToList();
 
-        // Build a lookup of user display names from the change-tracked UserProjection rows
-        // that are already loaded in this DbContext instance. Falls back to empty string when
-        // the projection row is not in memory — avoids a synchronous DB call here.
+        // Read from the UserProjection rows already loaded in this DbContext instance, falling back to
+        // empty string when the row is not in memory — that avoids a synchronous DB call inside SaveChanges.
         var userDisplayNames = ChangeTracker.Entries<UserProjection>()
             .ToDictionary(e => e.Entity.Id, e => e.Entity.DisplayName);
 

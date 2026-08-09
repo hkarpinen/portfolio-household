@@ -5,13 +5,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Client.Infrastructure;
 
-/// <summary>
-/// Single, centralized mapping of domain/application exceptions to RFC 7807 ProblemDetails
-/// responses. Registered via <c>AddExceptionHandler</c> and invoked by the
-/// <c>UseExceptionHandler</c> pipeline (see Program.cs). This is the ONE place the
-/// exception→status-code contract lives — controllers no longer wrap actions in
-/// per-action try/catch, so the error contract stays consistent across every endpoint.
-/// </summary>
+// The ONE place the exception→status-code contract lives. Controllers raise domain exceptions and
+// never wrap actions in per-action try/catch, so the error contract stays identical across every
+// endpoint.
 internal sealed class DomainExceptionHandler(
     IProblemDetailsService problemDetailsService) : IExceptionHandler
 {

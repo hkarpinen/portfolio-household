@@ -88,7 +88,7 @@ try
     builder.Services.AddFluentValidationAutoValidation();
     builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
-    // Problem details for standardised error responses (RFC 7807)
+    // RFC 7807 problem details.
     builder.Services.AddProblemDetails(options =>
     {
         options.CustomizeProblemDetails = ctx =>
@@ -98,8 +98,6 @@ try
         };
     });
 
-    // Centralized exception→status mapping. The single place the error contract lives;
-    // controllers raise domain exceptions and this maps them to ProblemDetails responses.
     builder.Services.AddExceptionHandler<Client.Infrastructure.DomainExceptionHandler>();
 
     builder.Services.AddEndpointsApiExplorer();
@@ -108,7 +106,6 @@ try
 
     var app = builder.Build();
 
-    // ProblemDetails-aware exception + status-code handling
     app.UseExceptionHandler();
     app.UseStatusCodePages();
 

@@ -4,29 +4,10 @@ using Household.Domain.Events;
 
 namespace Infrastructure.Persistence;
 
-/// <summary>
-/// Pure static projection logic: maps a domain event into an <see cref="ActivityEventRecord"/>.
-/// Kept stateless so it can be unit-tested without a DbContext and later moved to a
-/// MassTransit consumer without rewriting the mapping.
-/// </summary>
-/// <remarks>
-/// Finance cross-service events (<c>ExpenseCreated</c>, <c>ExpenseSplitPaid</c>) arrive over
-/// RabbitMQ and are projected by <see cref="Infrastructure.Messaging.Consumers"/>.FinanceConsumers
-/// directly — not through this projector — because the consumer needs DbContext access for user
-/// lookup and idempotency tracking that this stateless mapper deliberately avoids.
-/// </remarks>
 internal static class ActivityFeedProjector
 {
-    /// <summary>
-    /// Maps a domain event to an <see cref="ActivityEventRecord"/>.
-    /// Returns <c>null</c> for events that do not produce activity feed entries.
-    /// </summary>
-    /// <param name="domainEvent">The domain event raised by an aggregate.</param>
-    /// <param name="resolveDisplayName">
-    /// Function that resolves a user ID to a display name.
-    /// Returns <c>null</c> if the user projection is not available — the projector falls
-    /// back to empty string to avoid blocking the save.
-    /// </param>
+    // Null for events that produce no feed entry. An unresolvable display name falls back to empty
+    // rather than blocking the save.
     public static ActivityEventRecord? TryProject(
         DomainEvent domainEvent,
         Func<Guid, string?> resolveDisplayName)
@@ -105,8 +86,6 @@ internal static class ActivityFeedProjector
                 OccurredAt = e.CreatedAt,
             },
 
-            // All other domain events (HouseholdCreated, ChoreAssigned, etc.) do not
-            // produce activity feed entries and are intentionally skipped.
             _ => null,
         };
     }

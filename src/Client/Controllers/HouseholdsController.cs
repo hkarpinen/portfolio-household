@@ -17,7 +17,6 @@ public sealed class HouseholdsController(
 {
     private Guid CurrentUserId => Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
-    // GET /api/households
     [HttpGet]
     public async Task<IActionResult> ListMyHouseholds(CancellationToken ct)
     {
@@ -25,7 +24,6 @@ public sealed class HouseholdsController(
         return Ok(results);
     }
 
-    // GET /api/households/{id}
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetHousehold(Guid id, CancellationToken ct)
     {
@@ -33,7 +31,6 @@ public sealed class HouseholdsController(
         return result is null ? NotFound() : Ok(result);
     }
 
-    // POST /api/households
     [HttpPost]
     public async Task<IActionResult> CreateHousehold([FromBody] CreateHouseholdRequest request, CancellationToken ct)
     {
@@ -42,7 +39,6 @@ public sealed class HouseholdsController(
         return CreatedAtAction(nameof(GetHousehold), new { id }, new { id });
     }
 
-    // PUT /api/households/{id}
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> UpdateHousehold(Guid id, [FromBody] UpdateHouseholdRequest request, CancellationToken ct)
     {
@@ -51,7 +47,6 @@ public sealed class HouseholdsController(
         return NoContent();
     }
 
-    // POST /api/households/{id}/transfer-ownership
     [HttpPost("{id:guid}/transfer-ownership")]
     public async Task<IActionResult> TransferOwnership(Guid id, [FromBody] TransferOwnershipRequest request, CancellationToken ct)
     {
@@ -59,7 +54,6 @@ public sealed class HouseholdsController(
         return NoContent();
     }
 
-    // DELETE /api/households/{id}
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> DeleteHousehold(Guid id, CancellationToken ct)
     {
@@ -67,7 +61,6 @@ public sealed class HouseholdsController(
         return NoContent();
     }
 
-    // GET /api/households/{id}/members
     [HttpGet("{id:guid}/members")]
     public async Task<IActionResult> ListMembers(Guid id, CancellationToken ct)
     {
@@ -75,7 +68,6 @@ public sealed class HouseholdsController(
         return Ok(members);
     }
 
-    // POST /api/households/{id}/join
     [HttpPost("{id:guid}/join")]
     public async Task<IActionResult> Join(Guid id, CancellationToken ct)
     {
@@ -83,7 +75,6 @@ public sealed class HouseholdsController(
         return NoContent();
     }
 
-    // POST /api/households/{id}/invite
     [HttpPost("{id:guid}/invite")]
     public async Task<IActionResult> Invite(Guid id, [FromBody] InviteRequest? request, CancellationToken ct)
     {
@@ -91,7 +82,6 @@ public sealed class HouseholdsController(
         return Ok(new { invitationCode = code });
     }
 
-    // POST /api/households/accept-invitation
     [HttpPost("accept-invitation")]
     public async Task<IActionResult> AcceptInvitation([FromBody] AcceptInvitationRequest request, CancellationToken ct)
     {
@@ -99,7 +89,6 @@ public sealed class HouseholdsController(
         return NoContent();
     }
 
-    // POST /api/households/{id}/leave
     [HttpPost("{id:guid}/leave")]
     public async Task<IActionResult> Leave(Guid id, CancellationToken ct)
     {
@@ -107,7 +96,6 @@ public sealed class HouseholdsController(
         return NoContent();
     }
 
-    // DELETE /api/households/{id}/members/{membershipId}
     [HttpDelete("{id:guid}/members/{membershipId:guid}")]
     public async Task<IActionResult> RemoveMember(Guid id, Guid membershipId, CancellationToken ct)
     {
@@ -115,7 +103,6 @@ public sealed class HouseholdsController(
         return NoContent();
     }
 
-    // PUT /api/households/{id}/members/{membershipId}/role
     [HttpPut("{id:guid}/members/{membershipId:guid}/role")]
     public async Task<IActionResult> ChangeMemberRole(Guid id, Guid membershipId, [FromBody] ChangeMemberRoleRequest request, CancellationToken ct)
     {
@@ -123,21 +110,19 @@ public sealed class HouseholdsController(
         return NoContent();
     }
 
-    // POST /api/households/{id}/charges/{chargeId}/allocations
-    // Role-gated allocation assignment: a member may assign their OWN share; assigning another
-    // member's share requires Owner/Admin. Household authorizes here, then emits an event finance
-    // consumes — no service-to-service call, so this returns 202 (the allocation lands eventually).
+    // Role-gated: a member may assign their OWN share; assigning another member's requires
+    // Owner/Admin. Household authorizes here, then emits an event finance consumes, so this returns
+    // 202 — the allocation lands eventually, not before the response.
     [HttpPost("{id:guid}/charges/{chargeId:guid}/allocations")]
     public async Task<IActionResult> AssignAllocation(Guid id, Guid chargeId, [FromBody] AssignAllocationRequest request, CancellationToken ct)
     {
-        // Authorization/validation failures surface as domain exceptions and are mapped to
-        // ProblemDetails responses centrally by DomainExceptionHandler — no try/catch here.
+        // Authorization and validation failures surface as domain exceptions and are mapped to
+        // ProblemDetails centrally, which is why there is no try/catch here.
         await membershipManager.AssignAllocationAsync(
             new AssignAllocationCommand(id, chargeId, CurrentUserId, request.UserId, request.Amount, request.Currency), ct);
         return Accepted();
     }
 
-    // GET /api/households/{id}/activity?page=&pageSize=
     [HttpGet("{id:guid}/activity")]
     public async Task<IActionResult> GetActivity(
         Guid id,

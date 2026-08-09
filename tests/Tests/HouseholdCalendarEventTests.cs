@@ -106,7 +106,7 @@ public class HouseholdCalendarEventTests
         Assert.IsType<CalendarEventDeleted>(ev.DomainEvents.First());
     }
 
-    // ── Bill-path mutators are projection-only (no domain events) ─────────────
+    // Bill-path mutators are projection-only (no domain events)
     // These mirror finance's authoritative Charge lifecycle into a local read model.
     // They must NOT raise domain events — doing so would drain them to the outbox
     // (see HouseholdDbContext.DrainDomainEventsToOutbox) and re-publish a change

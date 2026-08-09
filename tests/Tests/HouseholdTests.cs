@@ -114,8 +114,6 @@ public class HouseholdTests
         Assert.Empty(household.DomainEvents);
     }
 
-    // ── Allocation authorization lives on the Household aggregate (it owns role checks) ──
-
     [Fact]
     public void AssignAllocation_RaisesGroupAllocationAssigned_OnHousehold()
     {

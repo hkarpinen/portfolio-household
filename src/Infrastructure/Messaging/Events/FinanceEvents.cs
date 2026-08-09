@@ -1,24 +1,9 @@
-// Wire contracts for finance events consumed from RabbitMQ.
-//
-// The namespace and type names MUST match the domain-event records finance
-// publishes (see finance/src/Domain/Events/ExpenseEvents.cs and
-// ExpenseSplitEvents.cs). MassTransit routes messages by namespace+type, so
-// finance's `Finance.Domain.Events.ChargeCreated` and household's
-// `Finance.Domain.Events.ChargeCreated` below resolve to the same exchange.
-//
-// Finance flattens its value-object IDs (ExpenseId/ExpenseSplitId/GroupId/UserId)
-// to bare GUIDs via its OutboxExtensions converters, so consumers see plain Guid
-// properties. Finance's DomainEvent base contributes the EventId/OccurredAt
-// fields. Extra properties on the wire are deserialised away — only the fields
-// household actually projects are modelled here.
+// Messages route by namespace and type name, so these MUST match the publisher's
+// exactly — a mismatch binds a different exchange and every message is missed
+// silently. Ids arrive as bare GUIDs; unmodelled wire fields deserialise away.
 namespace Finance.Domain.Events;
 
-/// <summary>
-/// Finance recurrence schedule on the wire, per finance's RecurrenceScheduleConverter.
-/// `Frequency` is a camelCase enum-name string ("daily" | "weekly" | "biWeekly" |
-/// "monthly" | "quarterly" | "semiAnnually" | "annually"); the consumer parses it
-/// into household's own `RecurrenceFrequency` enum (same names, case-insensitive).
-/// </summary>
+/// <summary>`Frequency` arrives as a camelCase enum NAME, not a number.</summary>
 public sealed record FinanceRecurrenceSchedule(
     string Frequency,
     DateTime StartDate,
@@ -55,10 +40,7 @@ public sealed record ChargeActivated(
     Guid ChargeId,
     Guid? GroupId);
 
-// Finance models a member settling their share as a Settlement — one journal entry in the
-// group ledger. Only the fields the activity feed reads are modelled here; extra wire fields
-// (toUserId, amount, valueDate, settlementEntryId) are deserialised away. Field names must
-// match finance's wire (allocationId, chargeId).
+// Only the fields the feed reads are modelled; the names must match the wire exactly.
 public sealed record SettlementRecorded(
     Guid EventId,
     DateTime OccurredAt,

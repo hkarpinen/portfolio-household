@@ -8,8 +8,9 @@ public enum ActivityEventType
     ChoreCreated,
     ChoreCompleted,
     CalendarEventCreated,
-    ExpenseCreated,  // cross-service (finance) — populated when finance events arrive
-    SplitPaid        // cross-service (finance) — matches finance's ExpenseSplitPaid event name
+    // Both are cross-service: populated only when finance events arrive.
+    ExpenseCreated,
+    SplitPaid
 }
 
 public sealed record ActivityEventDto(

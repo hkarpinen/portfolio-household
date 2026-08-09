@@ -8,16 +8,11 @@ namespace Infrastructure.Queries;
 
 internal sealed class CalendarEventQuery(HouseholdDbContext db) : ICalendarEventQuery
 {
-    /// <summary>
-    /// Member-source entries: returned by `StartsAt` falling in [from, to] as before.
-    /// Bill-source entries:
-    ///   - one-time (no Recurrence): same window check on `StartsAt` (= the bill's due date).
-    ///   - recurring: the row stores the rule, not the occurrences. We pull every rule whose
-    ///     life-of-the-rule overlaps the window, then expand each into one DTO per occurrence
-    ///     inside the window. Open-ended bills (RecurrenceEndDate == null) are clamped at the
-    ///     window's `to`, so a forever-monthly bill yields N entries for the requested month
-    ///     instead of infinity.
-    /// </summary>
+    // Member-source entries are windowed on StartsAt. Bill-source entries store the RULE, not the
+    // occurrences: a one-time bill is windowed on StartsAt (its due date), a recurring one is pulled
+    // if the life of its rule overlaps the window and then expanded into one DTO per occurrence
+    // inside it. Open-ended bills (no end date) are clamped at the window's end, so a
+    // forever-monthly bill yields N entries for the requested month instead of infinity.
     public async Task<IReadOnlyList<CalendarEventDto>> ListByHouseholdAsync(
         Guid householdId, DateTime from, DateTime to, CancellationToken ct = default)
     {

@@ -19,27 +19,16 @@ public sealed class HouseholdCalendarEvent : IAggregateRoot
     public DateTime? UpdatedAt { get; private set; }
     public DateTime? DeletedAt { get; private set; }
 
-    // ── Source-aware fields ──────────────────────────────────────────────────
-    // `Source = Member` is the existing behaviour. `Source = FinanceBill` events
-    // are mirrored from finance's expense lifecycle; they carry a `LinkedExpenseId`
-    // and (for recurring bills) a frequency + optional end date. Recurrence is
-    // expanded at query time across the requested calendar window — we don't
-    // materialise N occurrences per recurring bill.
+    // The two sources are deliberately asymmetric.
     //
-    // ── Event contract (intentionally asymmetric) ────────────────────────────
-    // Member-path mutators (Create/Update/Delete) RAISE domain events
-    // (CalendarEventCreated/Updated/Deleted): household is the source of truth for
-    // member events, so those drain to the outbox and feed the activity projector.
+    // Member-path mutators RAISE domain events: this is the source of truth for them.
     //
-    // Bill-path mutators (CreateFromBill/UpdateFromBill/Deactivate/ActivateFromBill)
-    // are PROJECTION-ONLY: they are written by the finance-event consumer
-    // (Infrastructure.Messaging.Consumers.FinanceConsumers) as a local read-model
-    // mirror of finance's authoritative Charge lifecycle. They deliberately raise NO
-    // domain events — finance already owns those facts, and echoing them back to the
-    // outbox would re-publish a change household didn't author (a feedback loop with
-    // no legitimate consumer). The activity feed for bill changes is written directly
-    // by the consumer, not via these mutators. `BillMutatorsAreProjectionOnly` in
-    // HouseholdCalendarEventTests guards this invariant so the asymmetry can't drift.
+    // Bill-path mutators are PROJECTION-ONLY and raise none. The facts are already
+    // owned elsewhere, so re-publishing them would emit a change this service never
+    // authored — a feedback loop with no legitimate consumer.
+    //
+    // Recurrence is stored as a rule and expanded per query window; occurrences are
+    // never materialised.
     public CalendarEventSource Source { get; private set; }
     public Guid? LinkedExpenseId { get; private set; }
     public RecurrenceFrequency? RecurrenceFrequency { get; private set; }
@@ -80,10 +69,8 @@ public sealed class HouseholdCalendarEvent : IAggregateRoot
     }
 
     /// <summary>
-    /// Mirror a finance shared-expense onto the calendar. Idempotent at the
-    /// query layer via `LinkedExpenseId`; the consumer upserts by that key.
-    /// `CreatedByUserId` is the finance event's `CreatedBy` so deletion-on-leave
-    /// semantics treat bill entries the same way member events are treated.
+    /// Idempotent on `LinkedExpenseId`, which is the upsert key. `CreatedByUserId`
+    /// is carried across so deletion-on-leave treats bill entries like member ones.
     /// </summary>
     public static HouseholdCalendarEvent CreateFromBill(
         HouseholdId householdId,
@@ -134,12 +121,7 @@ public sealed class HouseholdCalendarEvent : IAggregateRoot
         _domainEvents.Add(new CalendarEventUpdated(Id.Value, HouseholdId.Value, title, description, startsAt, endsAt, allDay, UpdatedAt.Value));
     }
 
-    /// <summary>
-    /// Apply a finance ExpenseUpdated to a bill-sourced entry. Also clears
-    /// `DeletedAt` so a re-activated bill (deactivated → reactivated) returns
-    /// to the calendar idempotently. Projection-only: raises no domain event
-    /// (finance owns this fact — see the event-contract note at the top of the file).
-    /// </summary>
+    /// <summary>Clears `DeletedAt`, so a reactivated bill returns idempotently.</summary>
     public void UpdateFromBill(string title, DateTime dueDate, RecurrenceFrequency? recurrenceFrequency, DateTime? recurrenceEndDate)
     {
         if (Source != CalendarEventSource.FinanceBill)
@@ -162,7 +144,7 @@ public sealed class HouseholdCalendarEvent : IAggregateRoot
         _domainEvents.Add(new CalendarEventDeleted(Id.Value, HouseholdId.Value, DeletedAt.Value));
     }
 
-    /// <summary>Soft-hide a bill entry on `ExpenseDeactivated`; row is kept so re-activation is a single update. Projection-only — raises no domain event.</summary>
+    /// <summary>Soft-hide: the row is kept so reactivation is a single update.</summary>
     public void DeactivateFromBill()
     {
         if (Source != CalendarEventSource.FinanceBill)
@@ -172,7 +154,6 @@ public sealed class HouseholdCalendarEvent : IAggregateRoot
         UpdatedAt = DateTime.UtcNow;
     }
 
-    /// <summary>Restore a previously-deactivated bill entry on `ExpenseActivated`. Projection-only — raises no domain event.</summary>
     public void ActivateFromBill()
     {
         if (Source != CalendarEventSource.FinanceBill)

@@ -66,16 +66,10 @@ public sealed class Household : IAggregateRoot
         _domainEvents.Add(new HouseholdDeleted(Id.Value, UpdatedAt));
     }
 
-    /// <summary>
-    /// Authorize a member's allocation (their share) on a finance charge and emit the
-    /// authoritative fact. The Household aggregate owns role-authorization, so this fact
-    /// belongs here — not on a membership aggregate that owns none of its state. The caller
-    /// (MembershipManager) performs the role check against the requester's membership before
-    /// invoking this; <paramref name="forUserId"/> is the member the share is for and is
-    /// authoritative on the wire (household has already verified the requester may act for them).
-    /// Pure event — no household state changes; it drains to the outbox on save and finance
-    /// consumes <see cref="GroupAllocationAssigned"/> to upsert the allocation. No service-to-service call.
-    /// </summary>
+    // Emits the authoritative fact that a member's share was authorized. The Household aggregate owns
+    // role-authorization, so the fact belongs here rather than on a membership aggregate that owns
+    // none of its state. forUserId is authoritative on the wire — the role check has already
+    // happened. Pure event: no household state changes.
     public void AssignAllocation(Guid chargeId, UserId forUserId, decimal amount, string currency)
     {
         _domainEvents.Add(new GroupAllocationAssigned(

@@ -10,20 +10,9 @@ using Npgsql;
 
 namespace Infrastructure.Messaging.Consumers;
 
-// Consumers for finance integration events. Each writes an ActivityEventRecord
-// row for the W2-H4 activity feed and registers the event in processed_events
-// for idempotency, mirroring the pattern in IdentityConsumers.
-//
-// We resolve actor display names through the UserProjections table (populated
-// by UserRegisteredConsumer / UserProfileUpdatedConsumer) — household never
-// queries finance directly.
-//
-// The expense lifecycle consumers (Created/Updated/Deactivated/Activated) also
-// project shared-expense due dates onto the household calendar. The calendar
-// row keyed by `(Source = FinanceBill, LinkedExpenseId)` is upserted from
-// `ExpenseCreated`/`Updated`, soft-hidden by `Deactivated`, restored by
-// `Activated`. Recurrence is stored as the rule (frequency + end date) and
-// expanded at query time across the requested window.
+// Actor names are resolved from a local projection — this service never queries
+// the publisher. Calendar rows are keyed `(Source, LinkedExpenseId)` and upserted,
+// so redelivery is harmless.
 
 internal sealed class ChargeCreatedConsumer(HouseholdDbContext db) : IConsumer<ChargeCreated>
 {
@@ -31,8 +20,7 @@ internal sealed class ChargeCreatedConsumer(HouseholdDbContext db) : IConsumer<C
     {
         var message = context.Message;
 
-        // Activity feed + calendar are both per-household; finance also raises
-        // ExpenseCreated for personal expenses (HouseholdId == null) — skip.
+        // Personal expenses arrive on the same event with no household — skip them.
         if (message.GroupId is null)
             return;
 
@@ -44,7 +32,6 @@ internal sealed class ChargeCreatedConsumer(HouseholdDbContext db) : IConsumer<C
             .Select(u => u.DisplayName)
             .FirstOrDefaultAsync(context.CancellationToken);
 
-        // 1) activity feed
         db.ActivityEvents.Add(new ActivityEventRecord
         {
             Id = Guid.NewGuid(),
@@ -57,7 +44,6 @@ internal sealed class ChargeCreatedConsumer(HouseholdDbContext db) : IConsumer<C
             OccurredAt = message.OccurredAt,
         });
 
-        // 2) calendar entry — idempotent on (Source, LinkedExpenseId)
         var existing = await db.CalendarEvents
             .FirstOrDefaultAsync(
                 e => e.Source == CalendarEventSource.FinanceBill && e.LinkedExpenseId == message.ChargeId,
@@ -77,8 +63,8 @@ internal sealed class ChargeCreatedConsumer(HouseholdDbContext db) : IConsumer<C
         }
         else
         {
-            // Replay or out-of-order delivery — make the row reflect the latest
-            // wire snapshot and resurrect the entry if it was previously soft-hidden.
+            // Replay or out-of-order: take the latest snapshot and resurrect a
+            // soft-hidden row.
             existing.UpdateFromBill(
                 message.Title,
                 DateTime.SpecifyKind(message.DueDate, DateTimeKind.Utc),
@@ -126,8 +112,8 @@ internal sealed class ChargeUpdatedConsumer(HouseholdDbContext db) : IConsumer<C
                 ChargeCreatedConsumer.ParseFrequency(message.RecurrenceSchedule?.Frequency),
                 message.RecurrenceSchedule?.EndDate is { } end ? DateTime.SpecifyKind(end, DateTimeKind.Utc) : null);
         }
-        // If no row exists yet (Created was missed), we let the next Created or
-        // backfill seed it; an Update alone isn't enough to reconstruct CreatedBy.
+        // An Update alone cannot reconstruct CreatedBy, so a missed Created is left
+        // for the next one to seed rather than guessed at.
 
         db.ProcessedEvents.Add(new ProcessedEvent(message.EventId, nameof(ChargeUpdated), DateTime.UtcNow));
         try { await db.SaveChangesAsync(context.CancellationToken); }
@@ -192,7 +178,6 @@ internal sealed class SettlementRecordedConsumer(HouseholdDbContext db) : IConsu
         if (await db.ProcessedEvents.AnyAsync(e => e.EventId == message.EventId, context.CancellationToken))
             return;
 
-        // The actor is the debtor who settled with the payer.
         var actorDisplayName = await db.UserProjections
             .Where(u => u.Id == message.FromUserId)
             .Select(u => u.DisplayName)
@@ -205,9 +190,8 @@ internal sealed class SettlementRecordedConsumer(HouseholdDbContext db) : IConsu
             EventType = nameof(ActivityEventType.SplitPaid),
             ActorId = message.FromUserId,
             ActorDisplayName = actorDisplayName ?? string.Empty,
-            // TargetId points at the allocation occurrence so the UI can deep-link;
-            // TargetDescription stays null — the event carries no title and household
-            // has no read model of finance charges.
+            // TargetDescription stays null: the event carries no title, and there is
+            // no local read model to look one up in.
             TargetId = message.AllocationId,
             TargetDescription = null,
             OccurredAt = message.OccurredAt,
