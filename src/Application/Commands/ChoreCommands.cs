@@ -11,6 +11,15 @@ public sealed record CreateChoreCommand(
     RecurrenceFrequency? RecurrenceFrequency,
     Guid? InitialAssigneeUserId = null);
 
+public sealed record UpdateChoreCommand(
+    Guid ChoreId,
+    Guid HouseholdId,
+    Guid RequestingUserId,
+    string Title,
+    string? Description,
+    DateTime? DueDate,
+    RecurrenceFrequency? RecurrenceFrequency);
+
 public sealed record AssignChoreCommand(
     Guid ChoreId,
     Guid HouseholdId,

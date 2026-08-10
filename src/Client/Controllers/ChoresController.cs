@@ -38,6 +38,14 @@ public sealed class ChoresController(
         return CreatedAtAction(nameof(Get), new { householdId, id }, new { id });
     }
 
+    [HttpPut("{id:guid}")]
+    public async Task<IActionResult> Update(Guid householdId, Guid id, [FromBody] UpdateChoreRequest request, CancellationToken ct)
+    {
+        await choreManager.UpdateAsync(new UpdateChoreCommand(
+            id, householdId, CurrentUserId, request.Title, request.Description, request.DueDate, request.RecurrenceFrequency), ct);
+        return NoContent();
+    }
+
     [HttpPost("{id:guid}/assign")]
     public async Task<IActionResult> Assign(Guid householdId, Guid id, [FromBody] AssignChoreRequest request, CancellationToken ct)
     {

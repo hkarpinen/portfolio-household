@@ -10,6 +10,15 @@ public sealed record ChoreCreated(
     string? RecurrenceFrequency,
     DateTime CreatedAt) : DomainEvent;
 
+public sealed record ChoreUpdated(
+    Guid ChoreId,
+    Guid HouseholdId,
+    string Title,
+    string? Description,
+    DateTime? DueDate,
+    string? RecurrenceFrequency,
+    DateTime UpdatedAt) : DomainEvent;
+
 public sealed record ChoreAssigned(
     Guid ChoreId,
     Guid HouseholdId,

@@ -49,6 +49,27 @@ public sealed class Chore : IAggregateRoot
         return chore;
     }
 
+    // A completed chore is history: Complete() has already spawned its successor as a separate
+    // row, so editing the finished one changes nothing going forward and leaves the two
+    // disagreeing about what the chore is. Edit the successor instead.
+    public void Update(
+        string title,
+        string? description,
+        DateTime? dueDate,
+        RecurrenceFrequency? recurrenceFrequency)
+    {
+        if (CompletedAt is not null)
+            throw new InvalidOperationException("A chore that is already done cannot be changed.");
+
+        Title = title;
+        Description = description;
+        DueDate = dueDate;
+        RecurrenceFrequency = recurrenceFrequency;
+        _domainEvents.Add(new ChoreUpdated(
+            Id.Value, HouseholdId.Value, title, description, dueDate,
+            recurrenceFrequency?.ToString(), DateTime.UtcNow));
+    }
+
     public void Assign(UserId assignedToUserId)
     {
         AssignedToUserId = assignedToUserId;

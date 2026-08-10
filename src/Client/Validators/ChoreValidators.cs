@@ -12,6 +12,15 @@ public sealed class CreateChoreRequestValidator : AbstractValidator<CreateChoreR
     }
 }
 
+public sealed class UpdateChoreRequestValidator : AbstractValidator<UpdateChoreRequest>
+{
+    public UpdateChoreRequestValidator()
+    {
+        RuleFor(x => x.Title).NotEmpty().MaximumLength(200);
+        RuleFor(x => x.Description).MaximumLength(1000);
+    }
+}
+
 public sealed class AssignChoreRequestValidator : AbstractValidator<AssignChoreRequest>
 {
     public AssignChoreRequestValidator()

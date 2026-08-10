@@ -7,6 +7,7 @@ namespace Household.Application.Managers;
 public interface IChoreManager
 {
     Task<Guid> CreateAsync(CreateChoreCommand command, CancellationToken ct = default);
+    Task UpdateAsync(UpdateChoreCommand command, CancellationToken ct = default);
     Task AssignAsync(AssignChoreCommand command, CancellationToken ct = default);
     Task CompleteAsync(CompleteChoreCommand command, CancellationToken ct = default);
     Task DeleteAsync(DeleteChoreCommand command, CancellationToken ct = default);
@@ -36,6 +37,19 @@ public sealed class ChoreManager(
 
         await choreRepo.SaveChangesAsync(ct);
         return chore.Id.Value;
+    }
+
+    public async Task UpdateAsync(UpdateChoreCommand cmd, CancellationToken ct = default)
+    {
+        var householdId = HouseholdId.Create(cmd.HouseholdId);
+        await EnsureMemberAsync(householdId, cmd.RequestingUserId, ct);
+
+        var chore = await choreRepo.GetByIdAsync(ChoreId.Create(cmd.ChoreId), ct);
+        if (chore is null || chore.HouseholdId != householdId)
+            throw new KeyNotFoundException("Chore not found.");
+
+        chore.Update(cmd.Title, cmd.Description, cmd.DueDate, cmd.RecurrenceFrequency);
+        await choreRepo.SaveChangesAsync(ct);
     }
 
     public async Task AssignAsync(AssignChoreCommand cmd, CancellationToken ct = default)

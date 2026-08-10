@@ -114,6 +114,45 @@ public class ChoreTests
 
 
     [Fact]
+    public void Update_ChangesTheFieldsAndRaisesTheEvent()
+    {
+        var chore = CreateChore();
+        chore.ClearDomainEvents();
+        var due = DateTime.UtcNow.AddDays(3);
+
+        chore.Update("Wash the dishes properly", "Including the pans", due, RecurrenceFrequency.Weekly);
+
+        Assert.Equal("Wash the dishes properly", chore.Title);
+        Assert.Equal("Including the pans", chore.Description);
+        Assert.Equal(due, chore.DueDate);
+        Assert.Equal(RecurrenceFrequency.Weekly, chore.RecurrenceFrequency);
+        Assert.Single(chore.DomainEvents.OfType<ChoreUpdated>());
+    }
+
+    [Fact]
+    public void Update_ClearsRecurrence_WhenNoneIsGiven()
+    {
+        var chore = Chore.Create(NewHouseholdId(), NewUserId(), "Bins", null, DateTime.UtcNow, RecurrenceFrequency.Weekly);
+
+        chore.Update("Bins", null, DateTime.UtcNow, null);
+
+        Assert.Null(chore.RecurrenceFrequency);
+        Assert.Null(chore.CreateNextOccurrence(DateTime.UtcNow));
+    }
+
+    [Fact]
+    public void Update_Throws_WhenTheChoreIsAlreadyDone()
+    {
+        var chore = CreateChore();
+        chore.Complete(NewUserId());
+
+        // The successor is its own row by then; editing this one would leave the two
+        // disagreeing about what the chore is.
+        Assert.Throws<InvalidOperationException>(
+            () => chore.Update("Something else", null, null, null));
+    }
+
+    [Fact]
     public void CreateNextOccurrence_ReturnsNull_WhenChoreDoesNotRepeat()
     {
         var chore = Chore.Create(NewHouseholdId(), NewUserId(), "Wash dishes", null, DateTime.UtcNow, null);
