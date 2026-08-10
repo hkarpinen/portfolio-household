@@ -54,6 +54,37 @@ public class HouseholdMembershipTests
     }
 
     [Fact]
+    public void CreateWithInvitation_GivesTheCodeAWeek()
+    {
+        var membership = HouseholdMembership.CreateWithInvitation(NewHouseholdId(), "Test Household", NewUserId());
+
+        Assert.NotNull(membership.InvitationExpiresAt);
+        var days = (membership.InvitationExpiresAt!.Value - DateTime.UtcNow).TotalDays;
+        Assert.InRange(days, 6.9, 7.0);
+        Assert.False(membership.InvitationHasExpired(DateTime.UtcNow));
+    }
+
+    [Fact]
+    public void InvitationHasExpired_IsTrue_PastTheDeadline()
+    {
+        var membership = HouseholdMembership.CreateWithInvitation(NewHouseholdId(), "Test Household", NewUserId());
+
+        Assert.True(membership.InvitationHasExpired(DateTime.UtcNow.AddDays(8)));
+    }
+
+    [Fact]
+    public void AcceptInvitation_Throws_WhenTheCodeHasExpired()
+    {
+        var membership = HouseholdMembership.CreateWithInvitation(NewHouseholdId(), "Test Household", NewUserId());
+        // Reach past the setter the way a row loaded from an old database would.
+        typeof(HouseholdMembership)
+            .GetProperty(nameof(HouseholdMembership.InvitationExpiresAt))!
+            .SetValue(membership, DateTime.UtcNow.AddDays(-1));
+
+        Assert.Throws<InvalidOperationException>(() => membership.AcceptInvitation(NewUserId()));
+    }
+
+    [Fact]
     public void AcceptInvitation_ActivatesMembershipWithUserId()
     {
         var membership = HouseholdMembership.CreateWithInvitation(NewHouseholdId(), "Test Household", NewUserId());

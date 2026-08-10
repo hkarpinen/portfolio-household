@@ -31,6 +31,36 @@ internal sealed class HouseholdQuery(HouseholdDbContext db) : IHouseholdQuery
             memberCount);
     }
 
+    public async Task<InvitationPreviewDto?> PreviewInvitationAsync(string invitationCode, CancellationToken ct = default)
+    {
+        var code = invitationCode.Trim().ToUpperInvariant();
+
+        var invite = await db.Memberships
+            .AsNoTracking()
+            .FirstOrDefaultAsync(m => m.InvitationCode == code && !m.IsActive, ct);
+
+        if (invite is null) return null;
+
+        var household = await db.Households
+            .AsNoTracking()
+            .FirstOrDefaultAsync(h => h.Id == invite.HouseholdId && h.IsActive, ct);
+
+        if (household is null) return null;
+
+        var memberCount = await db.Memberships
+            .CountAsync(m => m.HouseholdId == invite.HouseholdId && m.IsActive, ct);
+
+        // Expiry is reported rather than hidden: "that invite has expired, ask for a new
+        // code" is a different problem from "that code isn't a code", and the person
+        // holding it can only act on the difference if we tell them.
+        return new InvitationPreviewDto(
+            household.Id.Value,
+            household.Name,
+            memberCount,
+            invite.InvitationExpiresAt,
+            invite.InvitationHasExpired(DateTime.UtcNow));
+    }
+
     public async Task<IReadOnlyList<HouseholdSummaryDto>> ListUserHouseholdsAsync(Guid userId, CancellationToken ct = default)
     {
         var uid = UserId.Create(userId);

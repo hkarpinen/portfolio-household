@@ -82,6 +82,15 @@ public sealed class HouseholdsController(
         return Ok(new { invitationCode = code });
     }
 
+    // Reading a code must not spend it: the join screen promises "you'll see the code's
+    // household first", and the only other endpoint joins outright.
+    [HttpGet("invitations/{code}")]
+    public async Task<IActionResult> PreviewInvitation(string code, CancellationToken ct)
+    {
+        var preview = await householdQuery.PreviewInvitationAsync(code, ct);
+        return preview is null ? NotFound() : Ok(preview);
+    }
+
     [HttpPost("accept-invitation")]
     public async Task<IActionResult> AcceptInvitation([FromBody] AcceptInvitationRequest request, CancellationToken ct)
     {

@@ -7,6 +7,8 @@ public sealed class HouseholdMembership : IAggregateRoot
 {
     private readonly List<DomainEvent> _domainEvents = [];
 
+    public const int InvitationLifetimeDays = 7;
+
     public MembershipId Id { get; private set; }
     public HouseholdId HouseholdId { get; private set; }
     public UserId UserId { get; private set; }
@@ -15,6 +17,10 @@ public sealed class HouseholdMembership : IAggregateRoot
     public DateTime UpdatedAt { get; private set; }
     public bool IsActive { get; private set; }
     public string? InvitationCode { get; private set; }
+
+    // Null means no deadline: a membership that was never an invitation, and any invite
+    // issued before expiry existed. Outstanding codes are not retroactively killed.
+    public DateTime? InvitationExpiresAt { get; private set; }
 
     private HouseholdMembership() { }
 
@@ -49,15 +55,24 @@ public sealed class HouseholdMembership : IAggregateRoot
             JoinedAt = now,
             UpdatedAt = now,
             IsActive = false,
-            InvitationCode = code
+            InvitationCode = code,
+            // The invite screen has always told people the code lasts a week. Until now
+            // nothing enforced it and a code was good forever.
+            InvitationExpiresAt = now.AddDays(InvitationLifetimeDays)
         };
         membership._domainEvents.Add(new HouseholdMemberInvited(
             membership.Id.Value, householdId.Value, householdName, invitedByUserId.Value, code, recipientEmail, now));
         return membership;
     }
 
+    public bool InvitationHasExpired(DateTime asOf) =>
+        InvitationExpiresAt is { } expires && asOf > expires;
+
     public void AcceptInvitation(UserId userId)
     {
+        if (InvitationHasExpired(DateTime.UtcNow))
+            throw new InvalidOperationException("That invite has expired. Ask for a new code.");
+
         UserId = userId;
         IsActive = true;
         UpdatedAt = DateTime.UtcNow;
