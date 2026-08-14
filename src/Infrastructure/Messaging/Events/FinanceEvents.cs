@@ -9,43 +9,43 @@ public sealed record FinanceRecurrenceSchedule(
     DateTime StartDate,
     DateTime? EndDate);
 
-public sealed record ChargeCreated(
+public sealed record ExpenseCreated(
     Guid EventId,
     DateTime OccurredAt,
-    Guid ChargeId,
+    Guid ExpenseId,
     Guid UserId,
     string Title,
     DateTime DueDate,
     FinanceRecurrenceSchedule? RecurrenceSchedule,
     Guid? GroupId);
 
-public sealed record ChargeUpdated(
+public sealed record ExpenseUpdated(
     Guid EventId,
     DateTime OccurredAt,
-    Guid ChargeId,
+    Guid ExpenseId,
     string Title,
     DateTime DueDate,
     FinanceRecurrenceSchedule? RecurrenceSchedule,
     Guid? GroupId);
 
-public sealed record ChargeDeactivated(
+public sealed record ExpenseDeactivated(
     Guid EventId,
     DateTime OccurredAt,
-    Guid ChargeId,
+    Guid ExpenseId,
     Guid? GroupId);
 
-public sealed record ChargeActivated(
+public sealed record ExpenseActivated(
     Guid EventId,
     DateTime OccurredAt,
-    Guid ChargeId,
+    Guid ExpenseId,
     Guid? GroupId);
 
 // Only the fields the feed reads are modelled; the names must match the wire exactly.
 public sealed record SettlementRecorded(
     Guid EventId,
     DateTime OccurredAt,
-    Guid AllocationId,
-    Guid ChargeId,
+    Guid ShareId,
+    Guid ExpenseId,
     Guid GroupId,
     Guid FromUserId,
     DateTime OccurrenceDate);

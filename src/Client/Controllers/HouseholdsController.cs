@@ -121,14 +121,14 @@ public sealed class HouseholdsController(
 
     // Role-gated: a member may assign their OWN share; assigning another member's requires
     // Owner/Admin. Household authorizes here, then emits an event finance consumes, so this returns
-    // 202 — the allocation lands eventually, not before the response.
-    [HttpPost("{id:guid}/charges/{chargeId:guid}/allocations")]
-    public async Task<IActionResult> AssignAllocation(Guid id, Guid chargeId, [FromBody] AssignAllocationRequest request, CancellationToken ct)
+    // 202 — the share lands eventually, not before the response.
+    [HttpPost("{id:guid}/expenses/{expenseId:guid}/shares")]
+    public async Task<IActionResult> AssignShare(Guid id, Guid expenseId, [FromBody] AssignShareRequest request, CancellationToken ct)
     {
         // Authorization and validation failures surface as domain exceptions and are mapped to
         // ProblemDetails centrally, which is why there is no try/catch here.
-        await membershipManager.AssignAllocationAsync(
-            new AssignAllocationCommand(id, chargeId, CurrentUserId, request.UserId, request.Amount, request.Currency), ct);
+        await membershipManager.AssignShareAsync(
+            new AssignShareCommand(id, expenseId, CurrentUserId, request.UserId, request.Amount, request.Currency), ct);
         return Accepted();
     }
 

@@ -30,12 +30,12 @@ public sealed record ChangeMemberRoleCommand(
     Guid RequestingUserId,
     HouseholdRole NewRole);
 
-/// <summary>Assign a member's allocation (their share) on a finance charge. A member may assign
+/// <summary>Assign a member's share (their share) on a finance expense. A member may assign
 /// their OWN share; assigning another member's share requires Owner/Admin. Household authorizes,
-/// then emits <c>GroupAllocationAssigned</c> for finance to apply — no service-to-service call.</summary>
-public sealed record AssignAllocationCommand(
+/// then emits <c>GroupShareAssigned</c> for finance to apply — no service-to-service call.</summary>
+public sealed record AssignShareCommand(
     Guid HouseholdId,
-    Guid ChargeId,
+    Guid ExpenseId,
     Guid RequestingUserId,
     Guid TargetUserId,
     decimal Amount,

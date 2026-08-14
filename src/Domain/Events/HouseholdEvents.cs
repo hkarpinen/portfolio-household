@@ -63,13 +63,13 @@ public sealed record HouseholdMemberRoleChanged(
     DateTime ChangedAt) : DomainEvent;
 
 // The UserId here is authoritative — the role check already happened, so the consumer upserts the
-// allocation without re-checking. This is how a role-gated "add a split for another member"
+// share without re-checking. This is how a role-gated "add a split for another member"
 // reaches finance without finance ever learning household roles. GroupId == the household id.
-public sealed record GroupAllocationAssigned(
+public sealed record GroupShareAssigned(
     Guid Id,
     DateTime OccurredAt,
     Guid GroupId,
-    Guid ChargeId,
+    Guid ExpenseId,
     Guid UserId,
     decimal Amount,
     string Currency) : DomainEvent;

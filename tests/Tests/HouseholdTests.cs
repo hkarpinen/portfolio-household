@@ -115,20 +115,20 @@ public class HouseholdTests
     }
 
     [Fact]
-    public void AssignAllocation_RaisesGroupAllocationAssigned_OnHousehold()
+    public void AssignShare_RaisesGroupShareAssigned_OnHousehold()
     {
         var household = HouseholdModel.Create(NewUserId(), "Name", null, "USD");
         household.ClearDomainEvents();
         var forUser = NewUserId();
         var chargeId = Guid.NewGuid();
 
-        household.AssignAllocation(chargeId, forUser, 42.50m, "USD");
+        household.AssignShare(chargeId, forUser, 42.50m, "USD");
 
-        var ev = Assert.IsType<GroupAllocationAssigned>(Assert.Single(household.DomainEvents));
+        var ev = Assert.IsType<GroupShareAssigned>(Assert.Single(household.DomainEvents));
         // GroupId is the household id; UserId is the authoritative target member.
         Assert.Equal(household.Id.Value, ev.GroupId);
         Assert.Equal(forUser.Value, ev.UserId);
-        Assert.Equal(chargeId, ev.ChargeId);
+        Assert.Equal(chargeId, ev.ExpenseId);
         Assert.Equal(42.50m, ev.Amount);
         Assert.Equal("USD", ev.Currency);
     }

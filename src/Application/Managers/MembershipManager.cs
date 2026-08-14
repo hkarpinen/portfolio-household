@@ -13,7 +13,7 @@ public interface IMembershipManager
     Task LeaveAsync(LeaveHouseholdCommand command, CancellationToken ct = default);
     Task RemoveAsync(RemoveMemberCommand command, CancellationToken ct = default);
     Task ChangeRoleAsync(ChangeMemberRoleCommand command, CancellationToken ct = default);
-    Task AssignAllocationAsync(AssignAllocationCommand command, CancellationToken ct = default);
+    Task AssignShareAsync(AssignShareCommand command, CancellationToken ct = default);
 }
 
 public sealed class MembershipManager(
@@ -105,7 +105,7 @@ public sealed class MembershipManager(
         await membershipRepo.SaveChangesAsync(ct);
     }
 
-    public async Task AssignAllocationAsync(AssignAllocationCommand cmd, CancellationToken ct = default)
+    public async Task AssignShareAsync(AssignShareCommand cmd, CancellationToken ct = default)
     {
         var householdId = HouseholdId.Create(cmd.HouseholdId);
 
@@ -124,14 +124,14 @@ public sealed class MembershipManager(
             throw new InvalidOperationException("The target user is not a member of this household.");
 
         if (cmd.Amount <= 0)
-            throw new ArgumentException("Allocation amount must be positive.", nameof(cmd));
+            throw new ArgumentException("Share amount must be positive.", nameof(cmd));
 
         // The Household aggregate owns role-authorization, so the authorized FACT is emitted there, not
         // on a membership aggregate that owns none of its state. The role check above is the gate; the
-        // allocation itself belongs to finance, which consumes the event.
+        // share itself belongs to finance, which consumes the event.
         var household = await householdRepo.GetByIdAsync(householdId, ct)
             ?? throw new KeyNotFoundException("Household not found.");
-        household.AssignAllocation(cmd.ChargeId, UserId.Create(cmd.TargetUserId), cmd.Amount, cmd.Currency);
+        household.AssignShare(cmd.ExpenseId, UserId.Create(cmd.TargetUserId), cmd.Amount, cmd.Currency);
         await householdRepo.SaveChangesAsync(ct);
     }
 

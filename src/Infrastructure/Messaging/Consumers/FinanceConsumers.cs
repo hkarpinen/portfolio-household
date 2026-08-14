@@ -14,9 +14,9 @@ namespace Infrastructure.Messaging.Consumers;
 // the publisher. Calendar rows are keyed `(Source, LinkedExpenseId)` and upserted,
 // so redelivery is harmless.
 
-internal sealed class ChargeCreatedConsumer(HouseholdDbContext db) : IConsumer<ChargeCreated>
+internal sealed class ExpenseCreatedConsumer(HouseholdDbContext db) : IConsumer<ExpenseCreated>
 {
-    public async Task Consume(ConsumeContext<ChargeCreated> context)
+    public async Task Consume(ConsumeContext<ExpenseCreated> context)
     {
         var message = context.Message;
 
@@ -39,14 +39,14 @@ internal sealed class ChargeCreatedConsumer(HouseholdDbContext db) : IConsumer<C
             EventType = nameof(ActivityEventType.ExpenseCreated),
             ActorId = message.UserId,
             ActorDisplayName = actorDisplayName ?? string.Empty,
-            TargetId = message.ChargeId,
+            TargetId = message.ExpenseId,
             TargetDescription = message.Title,
             OccurredAt = message.OccurredAt,
         });
 
         var existing = await db.CalendarEvents
             .FirstOrDefaultAsync(
-                e => e.Source == CalendarEventSource.FinanceBill && e.LinkedExpenseId == message.ChargeId,
+                e => e.Source == CalendarEventSource.FinanceBill && e.LinkedExpenseId == message.ExpenseId,
                 context.CancellationToken);
 
         if (existing is null)
@@ -54,7 +54,7 @@ internal sealed class ChargeCreatedConsumer(HouseholdDbContext db) : IConsumer<C
             var entry = HouseholdCalendarEvent.CreateFromBill(
                 HouseholdId.Create(message.GroupId.Value),
                 UserId.Create(message.UserId),
-                message.ChargeId,
+                message.ExpenseId,
                 message.Title,
                 DateTime.SpecifyKind(message.DueDate, DateTimeKind.Utc),
                 ParseFrequency(message.RecurrenceSchedule?.Frequency),
@@ -72,7 +72,7 @@ internal sealed class ChargeCreatedConsumer(HouseholdDbContext db) : IConsumer<C
                 message.RecurrenceSchedule?.EndDate is { } end2 ? DateTime.SpecifyKind(end2, DateTimeKind.Utc) : null);
         }
 
-        db.ProcessedEvents.Add(new ProcessedEvent(message.EventId, nameof(ChargeCreated), DateTime.UtcNow));
+        db.ProcessedEvents.Add(new ProcessedEvent(message.EventId, nameof(ExpenseCreated), DateTime.UtcNow));
         try
         {
             await db.SaveChangesAsync(context.CancellationToken);
@@ -89,9 +89,9 @@ internal sealed class ChargeCreatedConsumer(HouseholdDbContext db) : IConsumer<C
         : null;
 }
 
-internal sealed class ChargeUpdatedConsumer(HouseholdDbContext db) : IConsumer<ChargeUpdated>
+internal sealed class ExpenseUpdatedConsumer(HouseholdDbContext db) : IConsumer<ExpenseUpdated>
 {
-    public async Task Consume(ConsumeContext<ChargeUpdated> context)
+    public async Task Consume(ConsumeContext<ExpenseUpdated> context)
     {
         var message = context.Message;
         if (message.GroupId is null) return;
@@ -101,7 +101,7 @@ internal sealed class ChargeUpdatedConsumer(HouseholdDbContext db) : IConsumer<C
 
         var existing = await db.CalendarEvents
             .FirstOrDefaultAsync(
-                e => e.Source == CalendarEventSource.FinanceBill && e.LinkedExpenseId == message.ChargeId,
+                e => e.Source == CalendarEventSource.FinanceBill && e.LinkedExpenseId == message.ExpenseId,
                 context.CancellationToken);
 
         if (existing is not null)
@@ -109,21 +109,21 @@ internal sealed class ChargeUpdatedConsumer(HouseholdDbContext db) : IConsumer<C
             existing.UpdateFromBill(
                 message.Title,
                 DateTime.SpecifyKind(message.DueDate, DateTimeKind.Utc),
-                ChargeCreatedConsumer.ParseFrequency(message.RecurrenceSchedule?.Frequency),
+                ExpenseCreatedConsumer.ParseFrequency(message.RecurrenceSchedule?.Frequency),
                 message.RecurrenceSchedule?.EndDate is { } end ? DateTime.SpecifyKind(end, DateTimeKind.Utc) : null);
         }
         // An Update alone cannot reconstruct CreatedBy, so a missed Created is left
         // for the next one to seed rather than guessed at.
 
-        db.ProcessedEvents.Add(new ProcessedEvent(message.EventId, nameof(ChargeUpdated), DateTime.UtcNow));
+        db.ProcessedEvents.Add(new ProcessedEvent(message.EventId, nameof(ExpenseUpdated), DateTime.UtcNow));
         try { await db.SaveChangesAsync(context.CancellationToken); }
         catch (DbUpdateException ex) when (ex.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation }) { }
     }
 }
 
-internal sealed class ChargeDeactivatedConsumer(HouseholdDbContext db) : IConsumer<ChargeDeactivated>
+internal sealed class ExpenseDeactivatedConsumer(HouseholdDbContext db) : IConsumer<ExpenseDeactivated>
 {
-    public async Task Consume(ConsumeContext<ChargeDeactivated> context)
+    public async Task Consume(ConsumeContext<ExpenseDeactivated> context)
     {
         var message = context.Message;
         if (message.GroupId is null) return;
@@ -133,21 +133,21 @@ internal sealed class ChargeDeactivatedConsumer(HouseholdDbContext db) : IConsum
 
         var existing = await db.CalendarEvents
             .FirstOrDefaultAsync(
-                e => e.Source == CalendarEventSource.FinanceBill && e.LinkedExpenseId == message.ChargeId,
+                e => e.Source == CalendarEventSource.FinanceBill && e.LinkedExpenseId == message.ExpenseId,
                 context.CancellationToken);
 
         if (existing is not null && existing.DeletedAt is null)
             existing.DeactivateFromBill();
 
-        db.ProcessedEvents.Add(new ProcessedEvent(message.EventId, nameof(ChargeDeactivated), DateTime.UtcNow));
+        db.ProcessedEvents.Add(new ProcessedEvent(message.EventId, nameof(ExpenseDeactivated), DateTime.UtcNow));
         try { await db.SaveChangesAsync(context.CancellationToken); }
         catch (DbUpdateException ex) when (ex.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation }) { }
     }
 }
 
-internal sealed class ChargeActivatedConsumer(HouseholdDbContext db) : IConsumer<ChargeActivated>
+internal sealed class ExpenseActivatedConsumer(HouseholdDbContext db) : IConsumer<ExpenseActivated>
 {
-    public async Task Consume(ConsumeContext<ChargeActivated> context)
+    public async Task Consume(ConsumeContext<ExpenseActivated> context)
     {
         var message = context.Message;
         if (message.GroupId is null) return;
@@ -157,13 +157,13 @@ internal sealed class ChargeActivatedConsumer(HouseholdDbContext db) : IConsumer
 
         var existing = await db.CalendarEvents
             .FirstOrDefaultAsync(
-                e => e.Source == CalendarEventSource.FinanceBill && e.LinkedExpenseId == message.ChargeId,
+                e => e.Source == CalendarEventSource.FinanceBill && e.LinkedExpenseId == message.ExpenseId,
                 context.CancellationToken);
 
         if (existing is not null && existing.DeletedAt is not null)
             existing.ActivateFromBill();
 
-        db.ProcessedEvents.Add(new ProcessedEvent(message.EventId, nameof(ChargeActivated), DateTime.UtcNow));
+        db.ProcessedEvents.Add(new ProcessedEvent(message.EventId, nameof(ExpenseActivated), DateTime.UtcNow));
         try { await db.SaveChangesAsync(context.CancellationToken); }
         catch (DbUpdateException ex) when (ex.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation }) { }
     }
@@ -192,7 +192,7 @@ internal sealed class SettlementRecordedConsumer(HouseholdDbContext db) : IConsu
             ActorDisplayName = actorDisplayName ?? string.Empty,
             // TargetDescription stays null: the event carries no title, and there is
             // no local read model to look one up in.
-            TargetId = message.AllocationId,
+            TargetId = message.ShareId,
             TargetDescription = null,
             OccurredAt = message.OccurredAt,
         });

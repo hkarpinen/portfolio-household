@@ -70,10 +70,10 @@ public sealed class Household : IAggregateRoot
     // role-authorization, so the fact belongs here rather than on a membership aggregate that owns
     // none of its state. forUserId is authoritative on the wire — the role check has already
     // happened. Pure event: no household state changes.
-    public void AssignAllocation(Guid chargeId, UserId forUserId, decimal amount, string currency)
+    public void AssignShare(Guid expenseId, UserId forUserId, decimal amount, string currency)
     {
-        _domainEvents.Add(new GroupAllocationAssigned(
-            Guid.NewGuid(), DateTime.UtcNow, Id.Value, chargeId, forUserId.Value, amount, currency));
+        _domainEvents.Add(new GroupShareAssigned(
+            Guid.NewGuid(), DateTime.UtcNow, Id.Value, expenseId, forUserId.Value, amount, currency));
     }
 
     public IReadOnlyCollection<DomainEvent> DomainEvents => _domainEvents.AsReadOnly();
