@@ -78,8 +78,11 @@ try
     builder.Services.AddRateLimiter(options =>
     {
         options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-        options.AddFixedWindowLimiter("standard", o => { o.PermitLimit = 120; o.Window = TimeSpan.FromMinutes(1); o.QueueLimit = 0; });
-        options.AddFixedWindowLimiter("write", o => { o.PermitLimit = 30; o.Window = TimeSpan.FromMinutes(1); o.QueueLimit = 0; });
+                // Limits are configuration, not constants. The defaults below are the production posture;
+        // a parallel e2e run drives far more traffic per minute than any real user. Override per
+        // environment with RateLimiting__<policy>.
+        options.AddFixedWindowLimiter("standard", o => { o.PermitLimit = builder.Configuration.GetValue<int?>("RateLimiting:standard") ?? 120; o.Window = TimeSpan.FromMinutes(1); o.QueueLimit = 0; });
+        options.AddFixedWindowLimiter("write", o => { o.PermitLimit = builder.Configuration.GetValue<int?>("RateLimiting:write") ?? 30; o.Window = TimeSpan.FromMinutes(1); o.QueueLimit = 0; });
     });
 
     builder.Services.AddControllers()

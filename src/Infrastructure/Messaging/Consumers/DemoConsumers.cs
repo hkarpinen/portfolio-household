@@ -16,8 +16,6 @@ internal sealed class DemoUserCreatedConsumer(
     public async Task Consume(ConsumeContext<DemoUserCreated> context)
     {
         var message = context.Message;
-        if (await db.ProcessedEvents.AnyAsync(e => e.EventId == message.Id, context.CancellationToken))
-            return;
 
         var projection = await db.UserProjections
             .FirstOrDefaultAsync(u => u.Id == message.UserId, context.CancellationToken);
@@ -45,15 +43,16 @@ internal sealed class DemoUserCreatedConsumer(
 
         if (householdId.HasValue)
         {
-            db.AddToOutbox(new DemoHouseholdSeededEvent(
+            // Publishing from inside a consumer with the outbox configured writes to the outbox
+            // in this same transaction rather than going straight to the broker.
+            await context.Publish(new DemoHouseholdSeededEvent(
                 Guid.NewGuid(),
                 DateTime.UtcNow,
                 message.UserId,
-                householdId.Value));
+                householdId.Value), context.CancellationToken);
         }
 
         projection.DemoSeedCompletedAt = DateTime.UtcNow;
-        db.ProcessedEvents.Add(new ProcessedEvent(message.Id, nameof(DemoUserCreated), DateTime.UtcNow));
 
         try
         {
@@ -80,8 +79,6 @@ internal sealed class DemoUserExpiredConsumer(
     public async Task Consume(ConsumeContext<DemoUserExpired> context)
     {
         var message = context.Message;
-        if (await db.ProcessedEvents.AnyAsync(e => e.EventId == message.Id, context.CancellationToken))
-            return;
 
         await demoSeedManager.CleanupAsync(message.UserId, context.CancellationToken);
 
@@ -89,8 +86,6 @@ internal sealed class DemoUserExpiredConsumer(
             .FirstOrDefaultAsync(u => u.Id == message.UserId, context.CancellationToken);
         if (projection is not null)
             db.UserProjections.Remove(projection);
-
-        db.ProcessedEvents.Add(new ProcessedEvent(message.Id, nameof(DemoUserExpired), DateTime.UtcNow));
 
         try
         {

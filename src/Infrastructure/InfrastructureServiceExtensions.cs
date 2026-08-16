@@ -18,16 +18,32 @@ public static class InfrastructureServiceExtensions
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        services.AddDbContext<HouseholdDbContext>(options =>
+        services.AddScoped<DomainEventPublishingInterceptor>();
+        services.AddDbContext<HouseholdDbContext>((sp, options) =>
             options.UseNpgsql(
                     configuration.GetConnectionString("Household"),
                     npgsql => npgsql.MigrationsAssembly("Infrastructure"))
-                .UseSnakeCaseNamingConvention());
+                .UseSnakeCaseNamingConvention()
+                .AddInterceptors(sp.GetRequiredService<DomainEventPublishingInterceptor>()));
 
         var rabbitConfig = configuration.GetSection("RabbitMq");
         services.AddMassTransit(x =>
         {
             x.SetEndpointNameFormatter(new KebabCaseEndpointNameFormatter("household", false));
+
+            // Replaces the hand-rolled outbox table and its polling BackgroundService. UseBusOutbox
+            // routes a Publish made during SaveChanges into the outbox rather than the broker, so
+            // the event commits with the aggregate and the delivery service sends it.
+            x.AddEntityFrameworkOutbox<HouseholdDbContext>(o =>
+            {
+                o.UsePostgres();
+                o.UseBusOutbox();
+            });
+
+            // Turns the inbox ON for every receive endpoint. AddEntityFrameworkOutbox alone sets up
+            // the tables and the send side only — without this the consumers have no dedup at all.
+            x.AddConfigureEndpointsCallback((context, _, cfg) =>
+                cfg.UseEntityFrameworkOutbox<HouseholdDbContext>(context));
 
             x.AddConsumer<UserRegisteredConsumer>();
             x.AddConsumer<UserProfileUpdatedConsumer>();
@@ -64,7 +80,6 @@ public static class InfrastructureServiceExtensions
         services.AddScoped<IDemoQuery, DemoQuery>();
         services.AddScoped<IActivityFeedQuery, ActivityFeedQuery>();
 
-        services.AddHostedService<OutboxPublisher>();
 
         return services;
     }

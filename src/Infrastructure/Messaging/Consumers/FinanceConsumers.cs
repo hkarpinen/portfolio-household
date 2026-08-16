@@ -24,9 +24,6 @@ internal sealed class ExpenseCreatedConsumer(HouseholdDbContext db) : IConsumer<
         if (message.GroupId is null)
             return;
 
-        if (await db.ProcessedEvents.AnyAsync(e => e.EventId == message.EventId, context.CancellationToken))
-            return;
-
         var actorDisplayName = await db.UserProjections
             .Where(u => u.Id == message.UserId)
             .Select(u => u.DisplayName)
@@ -71,8 +68,6 @@ internal sealed class ExpenseCreatedConsumer(HouseholdDbContext db) : IConsumer<
                 ParseFrequency(message.RecurrenceSchedule?.Frequency),
                 message.RecurrenceSchedule?.EndDate is { } end2 ? DateTime.SpecifyKind(end2, DateTimeKind.Utc) : null);
         }
-
-        db.ProcessedEvents.Add(new ProcessedEvent(message.EventId, nameof(ExpenseCreated), DateTime.UtcNow));
         try
         {
             await db.SaveChangesAsync(context.CancellationToken);
@@ -96,9 +91,6 @@ internal sealed class ExpenseUpdatedConsumer(HouseholdDbContext db) : IConsumer<
         var message = context.Message;
         if (message.GroupId is null) return;
 
-        if (await db.ProcessedEvents.AnyAsync(e => e.EventId == message.EventId, context.CancellationToken))
-            return;
-
         var existing = await db.CalendarEvents
             .FirstOrDefaultAsync(
                 e => e.Source == CalendarEventSource.FinanceBill && e.LinkedExpenseId == message.ExpenseId,
@@ -114,8 +106,6 @@ internal sealed class ExpenseUpdatedConsumer(HouseholdDbContext db) : IConsumer<
         }
         // An Update alone cannot reconstruct CreatedBy, so a missed Created is left
         // for the next one to seed rather than guessed at.
-
-        db.ProcessedEvents.Add(new ProcessedEvent(message.EventId, nameof(ExpenseUpdated), DateTime.UtcNow));
         try { await db.SaveChangesAsync(context.CancellationToken); }
         catch (DbUpdateException ex) when (ex.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation }) { }
     }
@@ -128,9 +118,6 @@ internal sealed class ExpenseDeactivatedConsumer(HouseholdDbContext db) : IConsu
         var message = context.Message;
         if (message.GroupId is null) return;
 
-        if (await db.ProcessedEvents.AnyAsync(e => e.EventId == message.EventId, context.CancellationToken))
-            return;
-
         var existing = await db.CalendarEvents
             .FirstOrDefaultAsync(
                 e => e.Source == CalendarEventSource.FinanceBill && e.LinkedExpenseId == message.ExpenseId,
@@ -138,8 +125,6 @@ internal sealed class ExpenseDeactivatedConsumer(HouseholdDbContext db) : IConsu
 
         if (existing is not null && existing.DeletedAt is null)
             existing.DeactivateFromBill();
-
-        db.ProcessedEvents.Add(new ProcessedEvent(message.EventId, nameof(ExpenseDeactivated), DateTime.UtcNow));
         try { await db.SaveChangesAsync(context.CancellationToken); }
         catch (DbUpdateException ex) when (ex.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation }) { }
     }
@@ -152,9 +137,6 @@ internal sealed class ExpenseActivatedConsumer(HouseholdDbContext db) : IConsume
         var message = context.Message;
         if (message.GroupId is null) return;
 
-        if (await db.ProcessedEvents.AnyAsync(e => e.EventId == message.EventId, context.CancellationToken))
-            return;
-
         var existing = await db.CalendarEvents
             .FirstOrDefaultAsync(
                 e => e.Source == CalendarEventSource.FinanceBill && e.LinkedExpenseId == message.ExpenseId,
@@ -162,8 +144,6 @@ internal sealed class ExpenseActivatedConsumer(HouseholdDbContext db) : IConsume
 
         if (existing is not null && existing.DeletedAt is not null)
             existing.ActivateFromBill();
-
-        db.ProcessedEvents.Add(new ProcessedEvent(message.EventId, nameof(ExpenseActivated), DateTime.UtcNow));
         try { await db.SaveChangesAsync(context.CancellationToken); }
         catch (DbUpdateException ex) when (ex.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation }) { }
     }
@@ -174,9 +154,6 @@ internal sealed class SettlementRecordedConsumer(HouseholdDbContext db) : IConsu
     public async Task Consume(ConsumeContext<SettlementRecorded> context)
     {
         var message = context.Message;
-
-        if (await db.ProcessedEvents.AnyAsync(e => e.EventId == message.EventId, context.CancellationToken))
-            return;
 
         var actorDisplayName = await db.UserProjections
             .Where(u => u.Id == message.FromUserId)
@@ -196,8 +173,6 @@ internal sealed class SettlementRecordedConsumer(HouseholdDbContext db) : IConsu
             TargetDescription = null,
             OccurredAt = message.OccurredAt,
         });
-
-        db.ProcessedEvents.Add(new ProcessedEvent(message.EventId, nameof(SettlementRecorded), DateTime.UtcNow));
         try
         {
             await db.SaveChangesAsync(context.CancellationToken);

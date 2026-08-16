@@ -1,6 +1,7 @@
 using Household.Domain;
 using Household.Domain.Aggregates;
 using Infrastructure.Persistence.Outbox;
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using HouseholdAggregate = Household.Domain.Aggregates.Household;
 
@@ -13,55 +14,21 @@ public sealed class HouseholdDbContext : DbContext
     public DbSet<Chore> Chores => Set<Chore>();
     public DbSet<HouseholdCalendarEvent> CalendarEvents => Set<HouseholdCalendarEvent>();
     public DbSet<UserProjection> UserProjections => Set<UserProjection>();
-    public DbSet<ProcessedEvent> ProcessedEvents => Set<ProcessedEvent>();
-    public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
     public DbSet<ActivityEventRecord> ActivityEvents => Set<ActivityEventRecord>();
 
     public HouseholdDbContext(DbContextOptions<HouseholdDbContext> options) : base(options) { }
 
-    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
-    {
-        DrainDomainEventsToOutbox();
-        return await base.SaveChangesAsync(cancellationToken);
-    }
-
-    private void DrainDomainEventsToOutbox()
-    {
-        var aggregates = ChangeTracker.Entries<IAggregateRoot>()
-            .Where(e => e.Entity.DomainEvents.Count != 0)
-            .Select(e => e.Entity)
-            .ToList();
-
-        // Read from the UserProjection rows already loaded in this DbContext instance, falling back to
-        // empty string when the row is not in memory — that avoids a synchronous DB call inside SaveChanges.
-        var userDisplayNames = ChangeTracker.Entries<UserProjection>()
-            .ToDictionary(e => e.Entity.Id, e => e.Entity.DisplayName);
-
-        string? ResolveDisplayName(Guid userId)
-        {
-            userDisplayNames.TryGetValue(userId, out var name);
-            return name;
-        }
-
-        foreach (var aggregate in aggregates)
-        {
-            foreach (var domainEvent in aggregate.DomainEvents)
-            {
-                this.AddToOutbox(domainEvent);
-
-                // Also project relevant events into the activity feed read model.
-                var activity = ActivityFeedProjector.TryProject(domainEvent, ResolveDisplayName);
-                if (activity is not null)
-                    ActivityEvents.Add(activity);
-            }
-            aggregate.ClearDomainEvents();
-        }
-    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema("household");
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(HouseholdDbContext).Assembly);
+
+        // MassTransit's transactional outbox and inbox, replacing the hand-rolled outbox_messages
+        // table, its polling publisher, and the processed_events dedup.
+        modelBuilder.AddInboxStateEntity();
+        modelBuilder.AddOutboxMessageEntity();
+        modelBuilder.AddOutboxStateEntity();
 
         // Ignore backing domain event collection from all aggregate roots
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())

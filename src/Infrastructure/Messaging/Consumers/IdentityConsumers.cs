@@ -12,8 +12,6 @@ internal sealed class UserRegisteredConsumer(HouseholdDbContext db) : IConsumer<
     public async Task Consume(ConsumeContext<UserRegistered> context)
     {
         var message = context.Message;
-        if (await db.ProcessedEvents.AnyAsync(e => e.EventId == message.Id, context.CancellationToken))
-            return;
 
         var existing = await db.UserProjections.FirstOrDefaultAsync(u => u.Id == message.UserId, context.CancellationToken);
         if (existing is null)
@@ -33,8 +31,6 @@ internal sealed class UserRegisteredConsumer(HouseholdDbContext db) : IConsumer<
             existing.DisplayName = message.DisplayName;
             existing.UpdatedAt = message.OccurredAt;
         }
-
-        db.ProcessedEvents.Add(new ProcessedEvent(message.Id, nameof(UserRegistered), DateTime.UtcNow));
         try
         {
             await db.SaveChangesAsync(context.CancellationToken);
@@ -60,8 +56,6 @@ internal sealed class UserProfileUpdatedConsumer(HouseholdDbContext db) : IConsu
     public async Task Consume(ConsumeContext<UserProfileUpdated> context)
     {
         var message = context.Message;
-        if (await db.ProcessedEvents.AnyAsync(e => e.EventId == message.Id, context.CancellationToken))
-            return;
 
         var existing = await db.UserProjections.FirstOrDefaultAsync(u => u.Id == message.UserId, context.CancellationToken);
         if (existing is not null)
@@ -70,8 +64,6 @@ internal sealed class UserProfileUpdatedConsumer(HouseholdDbContext db) : IConsu
             if (message.AvatarUrl is not null) existing.AvatarUrl = message.AvatarUrl;
             existing.UpdatedAt = message.OccurredAt;
         }
-
-        db.ProcessedEvents.Add(new ProcessedEvent(message.Id, nameof(UserProfileUpdated), DateTime.UtcNow));
         try
         {
             await db.SaveChangesAsync(context.CancellationToken);
