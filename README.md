@@ -30,7 +30,7 @@ dotnet run --project src/Client
 Or via the full stack:
 
 ```bash
-docker compose -f infra/compose.dev.yaml up household
+docker compose -f infra/compose.yaml -f infra/compose.dev.yaml up household
 ```
 
 ## Structure
