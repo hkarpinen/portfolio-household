@@ -4,7 +4,6 @@ using FluentValidation.AspNetCore;
 using Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
@@ -68,15 +67,6 @@ try
             .Build();
     });
 
-    builder.Services.AddRateLimiter(options =>
-    {
-        options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-                // Limits are configuration, not constants. The defaults below are the production posture;
-        // a parallel e2e run drives far more traffic per minute than any real user. Override per
-        // environment with RateLimiting__<policy>.
-        options.AddFixedWindowLimiter("standard", o => { o.PermitLimit = builder.Configuration.GetValue<int?>("RateLimiting:standard") ?? 120; o.Window = TimeSpan.FromMinutes(1); o.QueueLimit = 0; });
-        options.AddFixedWindowLimiter("write", o => { o.PermitLimit = builder.Configuration.GetValue<int?>("RateLimiting:write") ?? 30; o.Window = TimeSpan.FromMinutes(1); o.QueueLimit = 0; });
-    });
 
     builder.Services.AddControllers()
         .AddJsonOptions(o =>
@@ -106,7 +96,6 @@ try
     app.UseStatusCodePages();
 
     app.UseSerilogRequestLogging();
-    app.UseRateLimiter();
     app.UseAuthentication();
     app.UseAuthorization();
 
